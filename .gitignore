@@ -1,24 +1,126 @@
-# Logs
-logs
-*.log
+# Dependencies
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Build outputs
+dist/
+build/
+.next/
+out/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Supabase
+.supabase/
+
+# Session files
+.session.json
+
+# Test files (keep only essential ones)
+test-*.js
+testar-*.js
+verificar-*.js
+troubleshoot-*.js
+verify-*.js
+teste-*.js
+FINAL_TEST_SCRIPT.js
+TESTE_FINAL_CREDENCIAIS.js
+testClaudeIntegration.js
+
+# Documentation files (keep only essential ones)
+*.md
+!README.md
+!RELATORIO_AUDITORIA_LIMPEZA_FINAL.md
+
+# SQL files (keep only migrations)
+*.sql
+!supabase/migrations/*.sql
+
+# HTML test files
+*.html
+!index.html
+
+# Lock files (keep package-lock.json)
+bun.lockb
+deno.lock
+yarn.lock
+pnpm-lock.yaml

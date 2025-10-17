@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2, Send, Sparkles } from "lucide-react";
 import type { Lead } from "@/hooks/use-leads";
+import { useEvolutionSend } from "@/hooks/use-evolution-send";
 
 interface WhatsAppMessageModalProps {
   lead: Lead | null;
@@ -34,9 +36,9 @@ const messageTemplates = {
 };
 
 export function WhatsAppMessageModal({ lead, isOpen, onClose }: WhatsAppMessageModalProps) {
+  const { sendMessage: sendEvolutionMessage, isSending } = useEvolutionSend();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [message, setMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
 
   const handleTemplateChange = (templateKey: string) => {
     setSelectedTemplate(templateKey);
@@ -61,38 +63,23 @@ export function WhatsAppMessageModal({ lead, isOpen, onClose }: WhatsAppMessageM
       return;
     }
 
-    setIsSending(true);
-
     try {
       // Limpar o telefone (remover caracteres especiais)
       const phoneNumber = lead.telefone.replace(/\D/g, '');
       
-      const response = await fetch('https://bxtuynqauqasigcbocbm.supabase.co/functions/v1/whatsapp-send-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phoneNumber,
-          message,
-          leadId: lead.id
-        })
-      });
+      // Enviar via Evolution API
+      const result = await sendEvolutionMessage(phoneNumber, message, lead.id);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro ao enviar mensagem');
+      if (result.success) {
+        setMessage("");
+        setSelectedTemplate("");
+        onClose();
+      } else {
+        throw new Error(result.error || 'Erro ao enviar mensagem');
       }
-
-      toast.success("Mensagem enviada com sucesso!");
-      setMessage("");
-      setSelectedTemplate("");
-      onClose();
     } catch (error) {
       console.error('Erro ao enviar mensagem WhatsApp:', error);
       toast.error(error instanceof Error ? error.message : "Erro ao enviar mensagem");
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -105,17 +92,34 @@ export function WhatsAppMessageModal({ lead, isOpen, onClose }: WhatsAppMessageM
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-green-600" />
             Enviar Mensagem WhatsApp
+            <Badge className="bg-green-500 text-white ml-2">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Green-API
+            </Badge>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Informações do Lead */}
-          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4 rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">{lead.nome}</p>
-                <p className="text-sm text-muted-foreground">{lead.telefone}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{lead.nome}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{lead.telefone}</p>
+                {lead.origem === 'whatsapp_green_api' && (
+                  <Badge className="mt-2 bg-green-500 text-white text-xs">
+                    Lead do WhatsApp
+                  </Badge>
+                )}
               </div>
+              {lead.score && (
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {lead.score}
+                  </div>
+                  <div className="text-xs text-gray-500">Score IA</div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -158,16 +162,16 @@ export function WhatsAppMessageModal({ lead, isOpen, onClose }: WhatsAppMessageM
           <Button 
             onClick={handleSendMessage} 
             disabled={isSending || !message.trim()}
-            className="gap-2"
+            className="bg-green-600 hover:bg-green-700 gap-2 focus:ring-2 focus:ring-green-500"
           >
             {isSending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Enviando...
+                Enviando via WhatsApp...
               </>
             ) : (
               <>
-                <MessageCircle className="h-4 w-4" />
+                <Send className="h-4 w-4" />
                 Enviar Mensagem
               </>
             )}

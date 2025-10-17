@@ -1,140 +1,191 @@
-# ImobiCRM - Sistema de Gestão de Leads Imobiliários
+# 🏢 Supabuild Deals CRM
 
-![ImobiCRM Dashboard](https://img.shields.io/badge/Status-Funcionando-brightgreen)
-![React](https://img.shields.io/badge/React-18.3.1-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-Enabled-blue)
-![Tailwind](https://img.shields.io/badge/Tailwind-CSS-06B6D4)
+Sistema completo de CRM para gestão de leads e equipe de vendas, desenvolvido com React, TypeScript, Supabase e Tailwind CSS.
 
-## 🏠 Sobre o Projeto
+## 🚀 Funcionalidades
 
-O **ImobiCRM** é um sistema completo de gestão de leads imobiliários desenvolvido para corretores e gerentes. A plataforma oferece uma interface moderna e intuitiva para gerenciar todo o pipeline de vendas, desde o primeiro contato até o fechamento do negócio.
+### 👨‍💼 **Dashboard Gerente**
+- Visão geral de métricas e KPIs
+- Gestão completa de leads
+- Controle de equipe (corretores)
+- Relatórios de performance
+- Integração WhatsApp via Evolution API
 
-## ✨ Funcionalidades
+### 👨‍💻 **Dashboard Corretor**
+- Visualização de leads atribuídos
+- Sistema de tarefas e follow-ups
+- Relatórios individuais
+- Interface otimizada para vendas
 
-### 👨‍💼 Para Corretores
-- **Dashboard Personalizado**: Visão geral dos leads pessoais e métricas de desempenho
-- **Gestão de Leads**: Lista completa com filtros avançados por status, data e valor
-- **Acompanhamento de Status**: Controle do pipeline (Novo → Em Atendimento → Visita → Proposta → Fechado)
-- **Histórico de Interações**: Registro completo de todas as comunicações com clientes
-- **Ações Rápidas**: Ligação, email e agendamento de visitas direto da plataforma
+### 📊 **Gestão de Leads**
+- CRUD completo de leads
+- Sistema de status (Novo, Contatado, Interessado, Convertido)
+- Filtros avançados e busca
+- Timeline de interações
+- Sistema de pontuação com IA
 
-### 👩‍💻 Para Gerentes
-- **Dashboard Gerencial**: Visão completa da equipe e performance geral
-- **Relatórios Avançados**: Análise de conversão, desempenho individual e metas
-- **Gestão de Equipe**: Acompanhamento de todos os corretores e seus resultados
-- **Métricas em Tempo Real**: Leads novos, visitas agendadas, propostas pendentes
-- **Exportação de Dados**: Relatórios em CSV/PDF para análise externa
+### 📱 **Integração WhatsApp**
+- Conexão com Evolution API
+- Envio de mensagens automáticas
+- QR Code para autenticação
+- Status de conexão em tempo real
 
-## 🚀 Como Testar o Sistema
+### 🎯 **Sistema Kanban**
+- Visualização de leads por status
+- Drag & drop para mudança de status
+- Métricas por coluna
+- Alertas de gargalos
 
-### Acesso Rápido
-1. **Acesse**: [Sistema em Produção](https://57131ba4-55d0-40ac-9ef9-0810af33f4b3.lovableproject.com)
-2. **Escolha o perfil**:
-   - **Corretor**: `corretor@imobiliaria.com` / `123456`
-   - **Gerente**: `gerente@imobiliaria.com` / `admin123`
+### 🔐 **Autenticação Segura**
+- Login diferenciado (Gerente vs Corretor)
+- Sistema de roles e permissões
+- Sessões seguras com expiração
+- Auditoria de ações
 
-### Fluxo de Teste Recomendado
-1. **Login como Corretor** → Explore o dashboard pessoal
-2. **Acesse "Meus Leads"** → Veja a lista com filtros
-3. **Login como Gerente** → Analise dashboard completo da equipe
-4. **Compare as visões** → Entenda as diferenças de permissão
+## 🛠️ Tecnologias
 
-## 🎨 Design System
+- **Frontend:** React 18, TypeScript, Tailwind CSS
+- **Backend:** Supabase (PostgreSQL, Auth, Real-time)
+- **UI:** Shadcn/ui, Framer Motion, Lucide Icons
+- **Estado:** Zustand, React Query
+- **Deploy:** Vercel
+- **WhatsApp:** Evolution API
 
-### Cores Principais
-- **Primary Blue**: `#2563eb` - Botões principais e elementos de destaque
-- **Success Green**: `#059669` - Leads fechados e métricas positivas
-- **Warning Yellow**: `#d97706` - Alertas e leads em acompanhamento
-- **Neutral Grays**: Interface limpa e profissional
+## 📦 Instalação
 
-### Componentes Personalizados
-- **StatusBadge**: Indicadores visuais para status dos leads
-- **MetricCard**: Cards de métricas com gradientes e trends
-- **CRM Cards**: Layout consistente com shadows suaves
-- **Professional Layout**: Sidebar colapsível e header fixo
+```bash
+# Clone o repositório
+git clone https://github.com/seu-usuario/supabuild-deals-crm.git
 
-## 🛠️ Tecnologias Utilizadas
+# Instale as dependências
+npm install
 
-- **Frontend**: React 18.3.1 + TypeScript
-- **Styling**: Tailwind CSS + Shadcn/ui
-- **Roteamento**: React Router DOM
-- **Estado**: TanStack Query para cache
-- **Build**: Vite
-- **Componentes**: Lucide React (ícones)
+# Configure as variáveis de ambiente
+cp .env.example .env.local
 
-## 📊 Estrutura de Dados
-
-### Tabela Leads (Supabase)
-```sql
-CREATE TABLE leads (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome VARCHAR NOT NULL,
-  telefone VARCHAR NOT NULL,
-  email VARCHAR NOT NULL,
-  imovel_interesse TEXT,
-  data_entrada TIMESTAMP DEFAULT NOW(),
-  status VARCHAR DEFAULT 'Novo',
-  corretor_id UUID REFERENCES corretores(id),
-  observacoes TEXT,
-  ultima_interacao TIMESTAMP DEFAULT NOW(),
-  valor_interesse DECIMAL
-);
+# Execute o projeto
+npm run dev
 ```
 
-### Tabela Corretores (Supabase)
-```sql
-CREATE TABLE corretores (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome VARCHAR NOT NULL,
-  telefone VARCHAR,
-  email VARCHAR UNIQUE NOT NULL,
-  ativo BOOLEAN DEFAULT true,
-  meta_mensal INTEGER DEFAULT 15
-);
+## ⚙️ Configuração
+
+### Variáveis de Ambiente
+
+```env
+# Supabase
+VITE_SUPABASE_URL=sua_url_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima
+
+# Evolution API (WhatsApp)
+VITE_EVOLUTION_API_URL=sua_url_evolution
+VITE_EVOLUTION_API_KEY=sua_chave_evolution
+VITE_EVOLUTION_INSTANCE_NAME=nome_da_instancia
+
+# Claude AI (Opcional)
+VITE_CLAUDE_API_KEY=sua_chave_claude
 ```
 
-## 🔗 Próximos Passos
+### Banco de Dados
 
-### Integração com Supabase
-Para ativar as funcionalidades de backend (autenticação, banco de dados, etc.):
+Execute as migrações do Supabase:
 
-1. **Clique no botão verde "Supabase"** no topo da interface
-2. **Conecte sua conta** Supabase
-3. **Configure as tabelas** conforme estrutura acima
-4. **Ative a autenticação** email/senha
-5. **Configure RLS** (Row Level Security) para segurança
+```bash
+# Instale o CLI do Supabase
+npm install -g supabase
 
-### Funcionalidades Futuras
-- **Autenticação Real**: Login seguro com Supabase Auth
-- **Sincronização de Dados**: Dados reais em tempo real
-- **Notificações**: Alertas de novos leads e follow-ups
-- **WhatsApp Integration**: Comunicação direta via API
-- **Relatórios PDF**: Exportação avançada de relatórios
-- **Mobile App**: Versão mobile com Capacitor
+# Execute as migrações
+supabase db push
+```
 
-## 📱 Layout Responsivo
+## 🚀 Deploy
 
-O sistema foi desenvolvido com **mobile-first**, garantindo excelente experiência em:
-- **Desktop**: Layout completo com sidebar
-- **Tablet**: Sidebar colapsível e navegação otimizada  
-- **Mobile**: Interface touch-friendly com navegação simplificada
+### Vercel
 
-## 🎯 Métricas e KPIs
+1. Conecte seu repositório GitHub ao Vercel
+2. Configure as variáveis de ambiente
+3. Deploy automático a cada push
 
-### Corretor Individual
-- Taxa de conversão pessoal
-- Número de leads ativos
-- Valor médio por negócio
-- Tempo médio de conversão
+### Variáveis de Ambiente no Vercel
 
-### Visão Gerencial
-- Performance da equipe
-- Leads por fonte
-- Comparativo mensal
-- Ranking de corretores
+Configure as seguintes variáveis no painel do Vercel:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_EVOLUTION_API_URL`
+- `VITE_EVOLUTION_API_KEY`
+- `VITE_EVOLUTION_INSTANCE_NAME`
+
+## 📱 Uso
+
+### Login Gerente
+- **Email:** cursos30.click@gmail.com
+- **Senha:** admin123
+
+### Login Corretor
+- Acesse `/corretor-login`
+- Use as credenciais fornecidas pelo gerente
+
+## 🎯 Rotas Principais
+
+- `/` - Página inicial
+- `/auth` - Login gerente
+- `/corretor-login` - Login corretor
+- `/gerente` - Dashboard gerente
+- `/todos-leads` - Gestão de leads
+- `/gerente-equipe` - Gestão de equipe
+- `/kanban` - Visualização Kanban
+- `/whatsapp` - Integração WhatsApp
+
+## 🔧 Scripts
+
+```bash
+# Desenvolvimento
+npm run dev
+
+# Build para produção
+npm run build
+
+# Preview do build
+npm run preview
+
+# Lint
+npm run lint
+```
+
+## 📊 Estrutura do Projeto
+
+```
+src/
+├── components/          # Componentes reutilizáveis
+│   ├── crm/            # Componentes específicos do CRM
+│   ├── layout/          # Layout e navegação
+│   └── ui/              # Componentes de UI base
+├── pages/               # Páginas da aplicação
+├── hooks/               # Hooks customizados
+├── contexts/            # Contextos React
+├── lib/                 # Bibliotecas e utilitários
+├── utils/               # Funções utilitárias
+└── config/              # Configurações
+```
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 🆘 Suporte
+
+Para suporte, entre em contato através de:
+- Email: cursos30.click@gmail.com
+- Issues do GitHub
 
 ---
 
-**ImobiCRM** - *Transformando leads em vendas*
-
-Para suporte ou dúvidas sobre implementação, consulte a [documentação completa](https://docs.lovable.dev/) ou acesse nossa [comunidade no Discord](https://discord.com/channels/1119885301872070706/1280461670979993613).
+**Desenvolvido com ❤️ para otimizar vendas e gestão de leads**

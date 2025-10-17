@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Evolution API - Endpoints</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .endpoint-test {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ddd;
+        }
+        .endpoint-test.success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+        .endpoint-test.error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        .status.success { background: #10b981; color: white; }
+        .status.error { background: #ef4444; color: white; }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .alert {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-title {
+            font-weight: 600;
+            color: #b45309;
+            margin-bottom: 5px;
+        }
+        .alert-text {
+            color: #92400e;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Testar Evolution API - Endpoints</h1>
+        <p class="subtitle">Descubra qual endpoint funciona para buscar mensagens</p>
+
+        <div class="alert">
+            <div class="alert-title">📋 Instruções:</div>
+            <div class="alert-text">
+                1. Execute: <code>testar-endpoints-evolution.sql</code> no Supabase<br>
+                2. Copie o <strong>nome_instancia</strong> e <strong>token</strong><br>
+                3. Cole nos campos abaixo<br>
+                4. Clique em "Testar Todos os Endpoints"
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="instanceName">Nome da Instância</label>
+            <input 
+                type="text" 
+                id="instanceName" 
+                placeholder="gerente_cec3f29d3904"
+                value="gerente_cec3f29d3904"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="apiKey">API Key Evolution</label>
+            <input 
+                type="text" 
+                id="apiKey" 
+                placeholder="Cole o evolution_instance_token aqui"
+            >
+        </div>
+
+        <button class="btn" onclick="testarEndpoints()" id="testBtn">
+            🚀 Testar Todos os Endpoints
+        </button>
+
+        <div id="results" class="results" style="display: none;">
+            <h3 style="margin-bottom: 15px;">📊 Resultados:</h3>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const EVOLUTION_URL = 'https://api.urbanautobot.com';
+
+        // Lista de endpoints para testar
+        const endpoints = [
+            {
+                name: 'fetchInstances (atual)',
+                method: 'GET',
+                path: (instance) => `/message/fetchInstances/${instance}?number=false`
+            },
+            {
+                name: 'fetchInstances sem query',
+                method: 'GET',
+                path: (instance) => `/message/fetchInstances/${instance}`
+            },
+            {
+                name: 'findMessages',
+                method: 'GET',
+                path: (instance) => `/chat/findMessages/${instance}`
+            },
+            {
+                name: 'find',
+                method: 'GET',
+                path: (instance) => `/message/find/${instance}`
+            },
+            {
+                name: 'fetch',
+                method: 'GET',
+                path: (instance) => `/message/fetch/${instance}`
+            },
+            {
+                name: 'fetchMessages',
+                method: 'GET',
+                path: (instance) => `/chat/fetchMessages/${instance}`
+            },
+            {
+                name: 'whatsappMessages',
+                method: 'GET',
+                path: (instance) => `/chat/whatsappMessages/${instance}`
+            },
+            {
+                name: 'findAll',
+                method: 'GET',
+                path: (instance) => `/message/findAll/${instance}`
+            },
+            {
+                name: 'connectionState',
+                method: 'GET',
+                path: (instance) => `/instance/connectionState/${instance}`
+            },
+            {
+                name: 'fetchAllMessages',
+                method: 'POST',
+                path: (instance) => `/chat/fetchAllMessages/${instance}`,
+                body: {}
+            }
+        ];
+
+        async function testarEndpoints() {
+            const instanceName = document.getElementById('instanceName').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const btn = document.getElementById('testBtn');
+            const resultsDiv = document.getElementById('results');
+            const resultsContent = document.getElementById('resultsContent');
+
+            if (!instanceName || !apiKey) {
+                alert('❌ Preencha nome da instância e API key!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '🔄 Testando...';
+            resultsDiv.style.display = 'block';
+            resultsContent.innerHTML = '<p>⏳ Testando endpoints...</p>';
+
+            let html = '';
+            let successCount = 0;
+
+            for (const endpoint of endpoints) {
+                const url = EVOLUTION_URL + endpoint.path(instanceName);
+                
+                try {
+                    console.log(`Testando: ${url}`);
+                    
+                    const options = {
+                        method: endpoint.method,
+                        headers: {
+                            'apikey': apiKey,
+                            'Content-Type': 'application/json'
+                        }
+                    };
+
+                    if (endpoint.body) {
+                        options.body = JSON.stringify(endpoint.body);
+                    }
+
+                    const response = await fetch(url, options);
+                    const data = await response.json().catch(() => null);
+
+                    const isSuccess = response.status === 200;
+                    if (isSuccess) successCount++;
+
+                    html += `
+                        <div class="endpoint-test ${isSuccess ? 'success' : 'error'}">
+                            <div>
+                                <span class="status ${isSuccess ? 'success' : 'error'}">
+                                    ${response.status}
+                                </span>
+                                <strong>${endpoint.name}</strong>
+                                ${isSuccess ? '✅' : '❌'}
+                            </div>
+                            <div class="endpoint-url">${endpoint.method} ${url}</div>
+                            ${isSuccess && data ? `<pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>` : ''}
+                        </div>
+                    `;
+
+                } catch (error) {
+                    html += `
+                        <div class="endpoint-test error">
+                            <div>
+                                <span class="status error">ERR</span>
+                                <strong>${endpoint.name}</strong> ❌
+                            </div>
+                            <div class="endpoint-url">${endpoint.method} ${url}</div>
+                            <div style="color: #dc2626; margin-top: 5px; font-size: 12px;">
+                                ${error.message}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                resultsContent.innerHTML = html + `
+                    <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <strong>Testados: ${endpoints.indexOf(endpoint) + 1}/${endpoints.length}</strong>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div style="margin-top: 20px; padding: 20px; background: ${successCount > 0 ? '#f0fdf4' : '#fef2f2'}; border-radius: 8px; text-align: center;">
+                    <h3 style="color: ${successCount > 0 ? '#10b981' : '#ef4444'}; margin-bottom: 10px;">
+                        ${successCount > 0 ? '🎉 Sucesso!' : '😞 Nenhum endpoint funcionou'}
+                    </h3>
+                    <p style="color: #666;">
+                        ${successCount} de ${endpoints.length} endpoints retornaram 200
+                    </p>
+                    ${successCount > 0 ? '<p style="margin-top: 10px; color: #10b981; font-weight: 600;">✅ Use o(s) endpoint(s) marcado(s) com ✅ acima!</p>' : ''}
+                </div>
+            `;
+
+            resultsContent.innerHTML = html;
+            btn.disabled = false;
+            btn.textContent = '🔄 Testar Novamente';
+        }
+    </script>
+</body>
+</html>
+

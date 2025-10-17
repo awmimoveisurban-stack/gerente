@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/auth-context';
+import { useSecureAuth } from '@/hooks/use-secure-auth';
 import { toast } from 'sonner';
 
 export interface Task {
@@ -19,7 +19,7 @@ export interface Task {
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useSecureAuth();
 
   const fetchTasks = async () => {
     if (!user) return;
@@ -49,21 +49,25 @@ export const useTasks = () => {
     }
   };
 
-  const createTask = async (taskData: Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const createTask = async (
+    taskData: Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+  ) => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{
-          ...taskData,
-          user_id: user.id,
-        }])
+        .insert([
+          {
+            ...taskData,
+            user_id: user.id,
+          },
+        ])
         .select()
         .single();
 
       if (error) throw error;
-      
+
       toast.success('Tarefa criada com sucesso!');
       return data;
     } catch (error) {
@@ -83,7 +87,7 @@ export const useTasks = () => {
         .single();
 
       if (error) throw error;
-      
+
       toast.success('Tarefa atualizada com sucesso!');
       return data;
     } catch (error) {
@@ -95,13 +99,10 @@ export const useTasks = () => {
 
   const deleteTask = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('tasks').delete().eq('id', id);
 
       if (error) throw error;
-      
+
       toast.success('Tarefa excluída com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir tarefa:', error);
@@ -114,25 +115,14 @@ export const useTasks = () => {
     if (user) {
       fetchTasks();
 
-      // Set up realtime subscription
-      const channel = supabase
-        .channel('tasks-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'tasks',
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            fetchTasks();
-          }
-        )
-        .subscribe();
+      // ✅ DESATIVADO: Realtime removido, usando polling
+      // Polling a cada 60s (opcional)
+      const pollingInterval = setInterval(() => {
+        fetchTasks();
+      }, 60000);
 
       return () => {
-        supabase.removeChannel(channel);
+        clearInterval(pollingInterval);
       };
     }
   }, [user]);

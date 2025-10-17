@@ -1,24 +1,50 @@
-import { memo, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { StatusBadge, type LeadStatus } from "@/components/crm/status-badge";
+import { memo, useCallback } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { StatusBadge, type LeadStatus } from '@/components/crm/status-badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { 
-  Eye, 
-  Phone, 
-  Mail, 
+} from '@/components/ui/dropdown-menu';
+import {
+  Eye,
+  Phone,
+  Mail,
   Calendar,
   Edit,
   MoreHorizontal,
-  Users
-} from "lucide-react";
-import { type Lead } from "@/hooks/use-leads";
+  Users,
+  Trash2,
+  MessageSquare,
+  Flame,
+  ThermometerSun,
+  Snowflake,
+} from 'lucide-react';
+import { type Lead } from '@/hooks/use-leads';
+
+// Função para extrair score da IA das observações
+function extractAIScore(observacoes?: string | null): number | null {
+  if (!observacoes) return null;
+  const scoreMatch = observacoes.match(/Score:\s*(\d+)\/100/);
+  return scoreMatch ? parseInt(scoreMatch[1]) : null;
+}
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -27,6 +53,7 @@ interface LeadsTableProps {
   onCallLead: (lead: Lead) => void;
   onEmailLead: (lead: Lead) => void;
   onScheduleVisit: (lead: Lead) => void;
+  onDeleteLead: (lead: Lead) => void;
 }
 
 interface LeadRowProps {
@@ -36,6 +63,7 @@ interface LeadRowProps {
   onCallLead: (lead: Lead) => void;
   onEmailLead: (lead: Lead) => void;
   onScheduleVisit: (lead: Lead) => void;
+  onDeleteLead: (lead: Lead) => void;
 }
 
 const LeadRow = memo(function LeadRow({
@@ -44,130 +72,217 @@ const LeadRow = memo(function LeadRow({
   onEditLead,
   onCallLead,
   onEmailLead,
-  onScheduleVisit
+  onScheduleVisit,
+  onDeleteLead,
 }: LeadRowProps) {
   const getStatusBadgeStatus = useCallback((status: string): LeadStatus => {
     switch (status.toLowerCase()) {
-      case 'novo': return 'Novo';
-      case 'contatado': return 'Em Atendimento';
-      case 'interessado': return 'Em Atendimento';
-      case 'visita_agendada': return 'Visita';
-      case 'proposta': return 'Proposta';
-      case 'fechado': return 'Fechado';
-      case 'perdido': return 'Perdido';
-      default: return 'Novo';
+      case 'novo':
+        return 'Novo';
+      case 'contatado':
+        return 'Em Atendimento';
+      case 'interessado':
+        return 'Em Atendimento';
+      case 'visita_agendada':
+        return 'Visita';
+      case 'proposta':
+        return 'Proposta';
+      case 'fechado':
+        return 'Fechado';
+      case 'perdido':
+        return 'Perdido';
+      default:
+        return 'Novo';
     }
   }, []);
 
-  const handleViewDetails = useCallback(() => onViewDetails(lead), [lead, onViewDetails]);
+  const handleViewDetails = useCallback(
+    () => onViewDetails(lead),
+    [lead, onViewDetails]
+  );
   const handleEdit = useCallback(() => onEditLead(lead), [lead, onEditLead]);
   const handleCall = useCallback(() => onCallLead(lead), [lead, onCallLead]);
   const handleEmail = useCallback(() => onEmailLead(lead), [lead, onEmailLead]);
-  const handleSchedule = useCallback(() => onScheduleVisit(lead), [lead, onScheduleVisit]);
+  const handleSchedule = useCallback(
+    () => onScheduleVisit(lead),
+    [lead, onScheduleVisit]
+  );
+  const handleDelete = useCallback(
+    () => onDeleteLead(lead),
+    [lead, onDeleteLead]
+  );
 
   return (
-    <TableRow className="border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-      <TableCell className="font-medium">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
+    <TableRow className='border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors'>
+      <TableCell className='font-medium'>
+        <div className='flex items-center gap-3'>
+          <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold'>
             {lead.nome.charAt(0).toUpperCase()}
           </div>
           <div>
-            <div className="font-semibold text-gray-900 dark:text-white">{lead.nome}</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">{lead.email || "Sem email"}</div>
+            <div className='font-semibold text-gray-900 dark:text-white'>
+              {lead.nome}
+            </div>
+            <div className='text-sm text-gray-500 dark:text-gray-400'>
+              {lead.email || 'Sem email'}
+            </div>
           </div>
         </div>
       </TableCell>
       <TableCell>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-blue-500" />
-            <span className="text-gray-700 dark:text-gray-300 text-sm">{lead.telefone || "Sem telefone"}</span>
+        <div className='space-y-1'>
+          <div className='flex items-center gap-2'>
+            <Phone className='h-4 w-4 text-blue-500' />
+            <span className='text-gray-700 dark:text-gray-300 text-sm'>
+              {lead.telefone || 'Sem telefone'}
+            </span>
           </div>
           {lead.email && (
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-3 w-3 text-green-500" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">WhatsApp disponível</span>
+            <div className='flex items-center gap-2'>
+              <MessageSquare className='h-3 w-3 text-green-500' />
+              <span className='text-xs text-gray-500 dark:text-gray-400'>
+                WhatsApp disponível
+              </span>
             </div>
           )}
         </div>
       </TableCell>
       <TableCell>
-        <div className="max-w-[180px] truncate bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300">
-          {lead.imovel_interesse || "Não especificado"}
+        <div className='max-w-[180px] truncate bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300'>
+          {lead.imovel_interesse || 'Não especificado'}
         </div>
       </TableCell>
       <TableCell>
-        <div className="text-right">
-          <div className="font-semibold text-gray-900 dark:text-white text-sm">
-            {lead.valor_interesse ? `R$ ${lead.valor_interesse.toLocaleString('pt-BR')}` : "Não informado"}
+        <div className='text-right'>
+          <div className='font-semibold text-gray-900 dark:text-white text-sm'>
+            {lead.valor_interesse
+              ? `R$ ${lead.valor_interesse.toLocaleString('pt-BR')}`
+              : 'Não informado'}
           </div>
         </div>
+      </TableCell>
+      <TableCell>
+        {(() => {
+          const score = extractAIScore(lead.observacoes);
+          if (!score) return <span className='text-xs text-gray-400'>-</span>;
+
+          if (score >= 71) {
+            return (
+              <Badge
+                variant='outline'
+                className='bg-red-100 text-red-700 border-red-300 font-semibold'
+              >
+                <Flame className='h-3 w-3 mr-1' />
+                {score}
+              </Badge>
+            );
+          }
+          if (score >= 41) {
+            return (
+              <Badge
+                variant='outline'
+                className='bg-amber-100 text-amber-700 border-amber-300 font-semibold'
+              >
+                <ThermometerSun className='h-3 w-3 mr-1' />
+                {score}
+              </Badge>
+            );
+          }
+          return (
+            <Badge
+              variant='outline'
+              className='bg-blue-100 text-blue-700 border-blue-300 font-semibold'
+            >
+              <Snowflake className='h-3 w-3 mr-1' />
+              {score}
+            </Badge>
+          );
+        })()}
       </TableCell>
       <TableCell>
         <StatusBadge status={getStatusBadgeStatus(lead.status)} />
       </TableCell>
       <TableCell>
-        <div className="space-y-1">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {lead.ultima_interacao 
+        <div className='space-y-1'>
+          <div className='text-sm text-gray-600 dark:text-gray-400'>
+            {lead.ultima_interacao
               ? new Date(lead.ultima_interacao).toLocaleDateString('pt-BR')
-              : new Date(lead.data_entrada).toLocaleDateString('pt-BR')
-            }
+              : new Date(lead.data_entrada).toLocaleDateString('pt-BR')}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {lead.ultima_interacao 
-              ? new Date(lead.ultima_interacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-              : "Primeiro contato"
-            }
+          <div className='text-xs text-gray-500 dark:text-gray-400'>
+            {lead.ultima_interacao
+              ? new Date(lead.ultima_interacao).toLocaleTimeString('pt-BR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'Primeiro contato'}
           </div>
         </div>
       </TableCell>
-      <TableCell className="text-right">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="hover:bg-blue-50 dark:hover:bg-blue-950/20" 
-            title="Ver detalhes" 
+      <TableCell className='text-right'>
+        <div className='flex items-center gap-2'>
+          <Button
+            variant='ghost'
+            size='sm'
+            className='hover:bg-blue-50 dark:hover:bg-blue-950/20'
+            title='Ver detalhes'
             onClick={handleViewDetails}
             aria-label={`Ver detalhes do lead ${lead.nome}`}
           >
-            <Eye className="h-4 w-4 text-blue-500" />
+            <Eye className='h-4 w-4 text-blue-500' />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="hover:bg-green-50 dark:hover:bg-green-950/20" 
-            title="Ligar" 
+          <Button
+            variant='ghost'
+            size='sm'
+            className='hover:bg-green-50 dark:hover:bg-green-950/20'
+            title='Ligar'
             onClick={handleCall}
             aria-label={`Ligar para ${lead.nome}`}
           >
-            <Phone className="h-4 w-4 text-green-500" />
+            <Phone className='h-4 w-4 text-green-500' />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="hover:bg-gray-100 dark:hover:bg-gray-700"
+              <Button
+                variant='ghost'
+                size='sm'
+                className='hover:bg-gray-100 dark:hover:bg-gray-700'
                 aria-label={`Mais opções para ${lead.nome}`}
               >
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className='h-4 w-4' />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm">
-              <DropdownMenuItem onClick={handleEdit} className="hover:bg-blue-50 dark:hover:bg-blue-950/20">
-                <Edit className="mr-2 h-4 w-4 text-blue-500" />
+            <DropdownMenuContent
+              align='end'
+              className='bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm'
+            >
+              <DropdownMenuItem
+                onClick={handleEdit}
+                className='hover:bg-blue-50 dark:hover:bg-blue-950/20'
+              >
+                <Edit className='mr-2 h-4 w-4 text-blue-500' />
                 Editar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleEmail} className="hover:bg-green-50 dark:hover:bg-green-950/20">
-                <Mail className="mr-2 h-4 w-4 text-green-500" />
+              <DropdownMenuItem
+                onClick={handleEmail}
+                className='hover:bg-green-50 dark:hover:bg-green-950/20'
+              >
+                <Mail className='mr-2 h-4 w-4 text-green-500' />
                 Enviar Email
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSchedule} className="hover:bg-purple-50 dark:hover:bg-purple-950/20">
-                <Calendar className="mr-2 h-4 w-4 text-purple-500" />
+              <DropdownMenuItem
+                onClick={handleSchedule}
+                className='hover:bg-purple-50 dark:hover:bg-purple-950/20'
+              >
+                <Calendar className='mr-2 h-4 w-4 text-purple-500' />
                 Agendar Visita
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleDelete}
+                className='hover:bg-red-50 dark:hover:bg-red-950/20'
+              >
+                <Trash2 className='mr-2 h-4 w-4 text-red-500' />
+                <span className='text-red-600 dark:text-red-400'>Excluir</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -183,41 +298,59 @@ export const LeadsTable = memo(function LeadsTable({
   onEditLead,
   onCallLead,
   onEmailLead,
-  onScheduleVisit
+  onScheduleVisit,
+  onDeleteLead,
 }: LeadsTableProps) {
   return (
-    <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/50 dark:border-blue-800/50">
-        <div className="flex items-center justify-between">
+    <Card className='bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg'>
+      <CardHeader className='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/50 dark:border-blue-800/50'>
+        <div className='flex items-center justify-between'>
           <div>
-            <CardTitle className="text-xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-2">
-              <div className="p-1.5 bg-blue-500 rounded-lg">
-                <Users className="h-4 w-4 text-white" />
+            <CardTitle className='text-xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-2'>
+              <div className='p-1.5 bg-blue-500 rounded-lg'>
+                <Users className='h-4 w-4 text-white' />
               </div>
               Meus Leads ({leads.length})
             </CardTitle>
-            <CardDescription className="text-blue-600 dark:text-blue-400 mt-1">
+            <CardDescription className='text-blue-600 dark:text-blue-400 mt-1'>
               📋 Lista completa dos seus leads com todas as informações
             </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="overflow-x-auto">
+      <CardContent className='p-6'>
+        <div className='overflow-x-auto'>
           <Table>
             <TableHeader>
-              <TableRow className="border-gray-200 dark:border-gray-700">
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">👤 Cliente</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">📞 Contato</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">🏠 Interesse</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">💰 Valor</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">📊 Status</TableHead>
-                <TableHead className="font-semibold text-gray-700 dark:text-gray-300">📅 Última Interação</TableHead>
-                <TableHead className="text-right font-semibold text-gray-700 dark:text-gray-300">⚡ Ações</TableHead>
+              <TableRow className='border-gray-200 dark:border-gray-700'>
+                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
+                  👤 Cliente
+                </TableHead>
+                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
+                  📞 Contato
+                </TableHead>
+                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
+                  🏠 Interesse
+                </TableHead>
+                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
+                  💰 Valor
+                </TableHead>
+                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
+                  🤖 IA Score
+                </TableHead>
+                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
+                  📊 Status
+                </TableHead>
+                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
+                  📅 Última Interação
+                </TableHead>
+                <TableHead className='text-right font-semibold text-gray-700 dark:text-gray-300'>
+                  ⚡ Ações
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leads.map((lead) => (
+              {leads.map(lead => (
                 <LeadRow
                   key={lead.id}
                   lead={lead}
@@ -226,6 +359,7 @@ export const LeadsTable = memo(function LeadsTable({
                   onCallLead={onCallLead}
                   onEmailLead={onEmailLead}
                   onScheduleVisit={onScheduleVisit}
+                  onDeleteLead={onDeleteLead}
                 />
               ))}
             </TableBody>
@@ -235,8 +369,3 @@ export const LeadsTable = memo(function LeadsTable({
     </Card>
   );
 });
-
-
-
-
-

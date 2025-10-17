@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { type Lead } from "@/hooks/use-leads";
+import { useMemo, useCallback } from "react";
+import { type Lead } from "@/hooks/use-leads-stable";
 
 export interface KanbanMetrics {
   totalLeads: number;
@@ -91,15 +91,15 @@ export function useKanbanMetrics(leads: Lead[]): UseKanbanMetricsReturn {
     };
   }, [leads]);
 
-  const getStatusCount = useMemo(() => (status: string) => {
+  const getStatusCount = useCallback((status: string) => {
     return metrics.leadsPorStatus[status] || 0;
   }, [metrics.leadsPorStatus]);
 
-  const getLeadsByStatus = useMemo(() => (status: string) => {
+  const getLeadsByStatus = useCallback((status: string) => {
     return leads.filter(lead => lead.status === status);
   }, [leads]);
 
-  const getFilteredLeads = useMemo(() => (searchTerm: string) => {
+  const getFilteredLeads = useCallback((searchTerm: string) => {
     if (!searchTerm.trim()) return leads;
     
     const term = searchTerm.toLowerCase();
@@ -111,7 +111,7 @@ export function useKanbanMetrics(leads: Lead[]): UseKanbanMetricsReturn {
     });
   }, [leads]);
 
-  const getColumnStats = useMemo(() => () => {
+  const getColumnStats = useCallback(() => {
     const COLUMNS = [
       { id: 'novo', title: 'Novo' },
       { id: 'contatado', title: 'Contatado' },

@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/auth-context';
-import { useUserRoles } from '@/hooks/use-user-roles';
-import { toast } from 'sonner';
+import { useUnifiedAuth } from '@/contexts/unified-auth-context';
+import { useUnifiedRoles } from '@/hooks/use-unified-roles';
+import { useToast } from '@/hooks/use-toast';
+
+// ✅ SINGLETON GLOBAL: Apenas 1 interval para TODOS os componentes
+let globalPollingInterval: NodeJS.Timeout | null = null;
+let globalPollingActive = false;
 
 export interface Lead {
   id: string;
@@ -10,6 +14,7 @@ export interface Lead {
   nome: string;
   telefone?: string;
   email?: string;
+  origem?: string; // ✅ Origem do lead (whatsapp, site, indicacao, etc)
   imovel_interesse?: string;
   valor_interesse?: number;
   status: string;
@@ -19,60 +24,170 @@ export interface Lead {
   ultima_interacao?: string;
   created_at: string;
   updated_at: string;
+  // ✅ Campos adicionais para o modal de edição
+  tipo_imovel?: string;
+  localizacao?: string;
 }
 
 export const useLeads = () => {
+  // ✅ MODO NORMAL: Buscar dados reais do banco
+  const EMERGENCY_MODE = false;
+  
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const { hasRole, loading: rolesLoading } = useUserRoles();
+  const { user } = useUnifiedAuth();
+  const { hasRole, loading: rolesLoading } = useUnifiedRoles();
+  const { toast } = useToast();
 
-  const fetchLeads = async () => {
-    if (!user || rolesLoading) return;
+  const fetchLeads = useCallback(async (forceRefresh = false) => {
+    // 🚨 MODO EMERGÊNCIA
+    if (EMERGENCY_MODE) {
+      setLeads([]);
+      setLoading(false);
+      return;
+    }
+    
+    if (!user || rolesLoading) {
+      setLoading(false);
+      return;
+    }
+    
+    // ✅ FORÇAR REFRESH: Limpar cache se solicitado
+    if (forceRefresh) {
+      const cacheKey = `leads_cache_${user.id}`;
+      const cacheTimeKey = `leads_time_${user.id}`;
+      sessionStorage.removeItem(cacheKey);
+      sessionStorage.removeItem(cacheTimeKey);
+      console.log('🔄 [DEBUG] Cache forçado a limpar para refresh');
+    }
 
     try {
       setLoading(true);
-      console.log('🔍 Fetching leads for user:', user.email);
+      
+      // ✅ OTIMIZAÇÃO: Cache de leads por 30 segundos
+      const cacheKey = `leads_cache_${user.id}`;
+      const cacheTimeKey = `leads_time_${user.id}`;
+      const cachedLeads = sessionStorage.getItem(cacheKey);
+      const cacheTime = sessionStorage.getItem(cacheTimeKey);
+      
+      console.log('🔍 [DEBUG] Verificando cache:', {
+        hasCache: !!cachedLeads,
+        cacheTime: cacheTime ? new Date(parseInt(cacheTime)).toLocaleString() : 'não existe',
+        cacheAge: cacheTime ? Math.round((Date.now() - parseInt(cacheTime)) / 1000) + 's' : 'não existe'
+      });
+      
+      // Verificar se cache é válido (30 segundos)
+      if (cachedLeads && cacheTime) {
+        const cacheAge = Date.now() - parseInt(cacheTime);
+        if (cacheAge < 30 * 1000) { // 30 segundos
+          const leads = JSON.parse(cachedLeads);
+          console.log('✅ [DEBUG] Usando cache válido:', { total: leads.length });
+          setLeads(leads);
+          setLoading(false);
+          return;
+        } else {
+          console.log('⏰ [DEBUG] Cache expirado, buscando dados frescos');
+        }
+      }
       
       let query = supabase.from('leads').select('*');
       
       // Para corretores, filtrar por corretor (email)
       if (hasRole('corretor')) {
+        console.log('🔍 [LEADS] Filtrando leads para corretor:', user.email);
         query = query.eq('corretor', user.email);
-        console.log('👨‍💼 Filtering leads for corretor:', user.email);
       }
       // Para gerentes, buscar todos os leads
       else if (hasRole('gerente')) {
-        console.log('👨‍💼 Fetching all leads for gerente');
+        console.log('🔍 [LEADS] Buscando todos os leads para gerente');
+        // Buscar todos os leads (sem filtro)
       }
-      // Se não tem role definido, buscar apenas os próprios leads
+      // Se não tem role definido, verificar cargo do usuário
       else {
-        query = query.eq('user_id', user.id);
-        console.log('👤 Filtering leads by user_id:', user.id);
+        console.log('🔍 [LEADS] Role não definido, verificando cargo:', user.cargo);
+        if (user.cargo === 'gerente') {
+          console.log('🔍 [LEADS] Cargo gerente, buscando todos os leads');
+          // Buscar todos os leads
+        } else {
+          console.log('🔍 [LEADS] Cargo corretor, filtrando por email');
+          query = query.eq('corretor', user.email);
+        }
       }
       
-      const { data, error } = await query.order('created_at', { ascending: false });
+      // ✅ OTIMIZAÇÃO: Timeout para evitar travamento
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+      
+      // ✅ ORDENAR por score_ia (maior primeiro), depois por created_at
+      const queryPromise = query
+        .order('score_ia', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false });
+
+      console.log('🔍 [DEBUG] Buscando leads para:', {
+        userEmail: user.email,
+        userRole: hasRole('gerente') ? 'gerente' : hasRole('corretor') ? 'corretor' : 'sem-role',
+        query: hasRole('corretor') ? `corretor = ${user.email}` : hasRole('gerente') ? 'todos os leads' : `user_id = ${user.id}`
+      });
+
+      const { data, error } = await Promise.race([queryPromise, timeout]) as any;
 
       if (error) {
         console.error('❌ Error fetching leads:', error);
         throw error;
       }
       
-      console.log('✅ Leads fetched successfully:', data?.length || 0);
-      setLeads(data || []);
+      const leadsData = data || [];
+      
+      // Salvar no cache
+      sessionStorage.setItem(cacheKey, JSON.stringify(leadsData));
+      sessionStorage.setItem(cacheTimeKey, Date.now().toString());
+      
+      setLeads(leadsData);
     } catch (error) {
       console.error('❌ Erro ao buscar leads:', error);
-      toast.error('Erro ao carregar leads');
+      toast({
+        title: "Erro ao carregar leads",
+        description: "Não foi possível carregar os leads. Tente novamente.",
+        variant: "destructive"
+      });
       setLeads([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, rolesLoading]); // ✅ FIX: hasRole e toast REMOVIDOS (usados via closure)
 
   const createLead = async (leadData: Omit<Lead, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
 
     try {
+      // ✅ 1. VERIFICAR DUPLICATAS (por telefone OU email)
+      if (leadData.telefone || leadData.email) {
+        const conditions = [];
+        if (leadData.telefone) conditions.push(`telefone.eq.${leadData.telefone}`);
+        if (leadData.email) conditions.push(`email.eq.${leadData.email}`);
+        
+        const { data: existingLeads, error: checkError } = await supabase
+          .from('leads')
+          .select('id, nome, telefone, email, status, corretor')
+          .or(conditions.join(','))
+          .limit(5);
+
+        if (!checkError && existingLeads && existingLeads.length > 0) {
+          console.warn('⚠️ Lead similar encontrado:', existingLeads[0]);
+          
+          // Mostrar aviso (não bloquear, apenas avisar)
+          toast({
+            title: "⚠️ Possível duplicata",
+            description: `Encontrado lead similar: ${existingLeads[0].nome} (${existingLeads[0].status})`,
+            variant: "default",
+          });
+          
+          // Continuar mesmo assim (gerente pode querer criar duplicata intencional)
+        }
+      }
+
+      // ✅ 2. CRIAR LEAD
       const leadToCreate = {
         ...leadData,
         user_id: user.id,
@@ -88,36 +203,96 @@ export const useLeads = () => {
 
       if (error) throw error;
       
-      toast.success('Lead criado com sucesso!');
+      toast({
+        title: "✅ Lead criado com sucesso!",
+        description: `${data.nome} foi adicionado ao sistema.`
+      });
       await fetchLeads(); // Recarregar leads
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao criar lead:', error);
-      toast.error('Erro ao criar lead');
+      
+      // ✅ 3. MENSAGENS DE ERRO ESPECÍFICAS
+      let title = "Erro ao criar lead";
+      let description = "Não foi possível criar o lead. Tente novamente.";
+      
+      if (error.code === '23505') {
+        title = "Lead duplicado";
+        description = "Já existe um lead com este email ou telefone no sistema.";
+      } else if (error.code === '23503') {
+        title = "Erro de autenticação";
+        description = "Sua sessão expirou. Faça login novamente.";
+      } else if (error.code === '23502') {
+        title = "Campo obrigatório faltando";
+        description = "Verifique se preencheu todos os campos obrigatórios.";
+      } else if (error.message?.includes('network')) {
+        title = "Erro de conexão";
+        description = "Verifique sua internet e tente novamente.";
+      } else if (error.message) {
+        description = error.message;
+      }
+      
+      toast({
+        title,
+        description,
+        variant: "destructive"
+      });
       throw error;
     }
   };
 
   const updateLead = async (id: string, updates: Partial<Lead>) => {
     try {
-      const { data, error } = await supabase
+      console.log('🔄 Iniciando atualização do lead:', id, updates);
+      
+      // ✅ Limpar campos vazios e preparar dados para atualização
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => 
+          value !== null && value !== undefined && value !== ''
+        )
+      );
+
+      console.log('🧹 Dados limpos para atualização:', cleanUpdates);
+
+      // ✅ Usar método simples do Supabase
+      const { data, error } = await (supabase as any)
         .from('leads')
         .update({
-          ...updates,
+          ...cleanUpdates,
           ultima_interacao: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro do Supabase:', error);
+        throw new Error(error.message || 'Erro ao atualizar lead no banco de dados');
+      }
       
-      toast.success('Lead atualizado com sucesso!');
-      await fetchLeads(); // Recarregar leads
+      console.log('✅ Lead atualizado com sucesso:', data);
+      
+      // ✅ Atualizar estado local imediatamente
+      setLeads(prevLeads => 
+        prevLeads.map(lead => 
+          lead.id === id ? { ...lead, ...cleanUpdates } : lead
+        )
+      );
+      
+      toast({
+        title: "✅ Lead Atualizado",
+        description: `Informações foram salvas com sucesso!`
+      });
+      
       return data;
-    } catch (error) {
-      console.error('Erro ao atualizar lead:', error);
-      toast.error('Erro ao atualizar lead');
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar lead:', error);
+      toast({
+        title: "❌ Erro ao Atualizar",
+        description: error.message || "Não foi possível atualizar o lead. Tente novamente.",
+        variant: "destructive"
+      });
       throw error;
     }
   };
@@ -131,139 +306,145 @@ export const useLeads = () => {
 
       if (error) throw error;
       
-      toast.success('Lead excluído com sucesso!');
+      toast({
+        title: "Lead excluído com sucesso!",
+        description: "Lead foi removido do sistema."
+      });
       await fetchLeads(); // Recarregar leads
     } catch (error) {
       console.error('Erro ao excluir lead:', error);
-      toast.error('Erro ao excluir lead');
+      toast({
+        title: "Erro ao excluir lead",
+        description: "Não foi possível excluir o lead. Tente novamente.",
+        variant: "destructive"
+      });
       throw error;
     }
   };
 
   useEffect(() => {
-    if (user && !rolesLoading) {
-      fetchLeads();
-
-      // Set up realtime subscription with improved error handling
-      let channel: any = null;
-      let reconnectTimeout: NodeJS.Timeout | null = null;
-      let reconnectAttempts = 0;
-      const maxReconnectAttempts = 3;
-      let isSubscribed = false;
-
-      const setupRealtime = () => {
-        try {
-          // Clean up existing channel first
-          if (channel) {
-            supabase.removeChannel(channel);
-          }
-
-          channel = supabase
-            .channel(`leads-changes-${user.id}`, {
-              config: {
-                broadcast: { self: false },
-                presence: { key: user.id }
-              }
-            })
-            .on(
-              'postgres_changes',
-              {
-                event: '*',
-                schema: 'public',
-                table: 'leads',
-                filter: `user_id=eq.${user.id}`,
-              },
-              (payload) => {
-                console.log('🔄 Realtime update received:', payload.eventType);
-                // Only fetch if it's not our own change to avoid loops
-                if (payload.eventType !== 'INSERT' || !isSubscribed) {
-                  fetchLeads();
-                }
-              }
-            )
-            .subscribe((status) => {
-              console.log('📡 Subscription status:', status);
-              
-              if (status === 'SUBSCRIBED') {
-                console.log('✅ Realtime subscription active for leads');
-                isSubscribed = true;
-                reconnectAttempts = 0;
-              } else if (status === 'CHANNEL_ERROR') {
-                console.warn('⚠️ Realtime subscription error - will retry');
-                isSubscribed = false;
-                handleRealtimeError();
-              } else if (status === 'CLOSED') {
-                console.log('📡 Realtime subscription closed');
-                isSubscribed = false;
-                // Don't auto-reconnect on manual close
-                if (reconnectAttempts > 0) {
-                  handleRealtimeError();
-                }
-              } else if (status === 'TIMED_OUT') {
-                console.warn('⏰ Realtime subscription timed out - will retry');
-                isSubscribed = false;
-                handleRealtimeError();
-              }
-            });
-        } catch (error) {
-          console.warn('⚠️ Error setting up realtime:', error);
-          isSubscribed = false;
-          handleRealtimeError();
-        }
-      };
-
-      const handleRealtimeError = () => {
-        if (reconnectAttempts < maxReconnectAttempts) {
-          reconnectAttempts++;
-          console.log(`🔄 Attempting to reconnect realtime (${reconnectAttempts}/${maxReconnectAttempts})...`);
-          
-          // Clean up existing channel
-          if (channel) {
-            supabase.removeChannel(channel);
-            channel = null;
-          }
-
-          // Try to reconnect after delay with exponential backoff
-          reconnectTimeout = setTimeout(() => {
-            setupRealtime();
-          }, Math.min(2000 * Math.pow(2, reconnectAttempts - 1), 10000));
-        } else {
-          console.log('⚠️ Max reconnect attempts reached. Using polling fallback.');
-          // Fall back to polling every 15 seconds
-          const pollingInterval = setInterval(() => {
-            fetchLeads();
-          }, 15000);
-
-          return () => {
-            clearInterval(pollingInterval);
-          };
-        }
-      };
-
-      // Initial setup with delay to ensure auth is ready
-      const initTimeout = setTimeout(() => {
-        setupRealtime();
-      }, 1000);
-
-      return () => {
-        console.log('🔌 Cleaning up realtime subscription');
-        clearTimeout(initTimeout);
-        
-        if (channel) {
-          supabase.removeChannel(channel);
-          channel = null;
-        }
-        
-        if (reconnectTimeout) {
-          clearTimeout(reconnectTimeout);
-          reconnectTimeout = null;
-        }
-        
-        isSubscribed = false;
-        reconnectAttempts = 0;
-      };
+    // ✅ SINGLETON: Apenas 1 polling global para TODA a aplicação
+    if (globalPollingActive) {
+      return;
     }
-  }, [user, rolesLoading]);
+
+    // Se não tem user ou ainda carregando roles, não fazer nada
+    if (!user || rolesLoading) {
+      setLoading(false);
+      return;
+    }
+
+    // ✅ FIX: Verificar se já existe um interval ativo antes de criar outro
+    if (globalPollingInterval) {
+      clearInterval(globalPollingInterval);
+    }
+
+    // Marcar como ativo globalmente
+    globalPollingActive = true;
+
+    // ✅ Limpar interval global anterior (se existir)
+    if (globalPollingInterval) {
+      clearInterval(globalPollingInterval);
+      globalPollingInterval = null;
+    }
+
+    let isMounted = true;
+
+    // ✅ FIX RACE CONDITION: Função interna para evitar dependência circular
+    const pollLeads = async () => {
+      if (!isMounted) return;
+
+      try {
+        setLoading(true);
+        // console.log('🔍 Fetching leads for user:', user.email); // ✅ OTIMIZAÇÃO: Log removido
+        
+        let query = supabase.from('leads').select('*');
+        
+        // Para corretores, filtrar por corretor (email)
+        if (hasRole('corretor')) {
+          console.log('🔍 [POLLING] Filtrando leads para corretor:', user.email);
+          query = query.eq('corretor', user.email);
+        }
+        // Para gerentes, buscar todos os leads
+        else if (hasRole('gerente')) {
+          console.log('🔍 [POLLING] Buscando todos os leads para gerente');
+          // Buscar todos os leads (sem filtro)
+        }
+        // Se não tem role definido, verificar cargo do usuário
+        else {
+          console.log('🔍 [POLLING] Role não definido, verificando cargo:', user.cargo);
+          if (user.cargo === 'gerente') {
+            console.log('🔍 [POLLING] Cargo gerente, buscando todos os leads');
+            // Buscar todos os leads
+          } else {
+            console.log('🔍 [POLLING] Cargo corretor, filtrando por email');
+            query = query.eq('corretor', user.email);
+          }
+        }
+        
+        // ✅ ORDENAR por score_ia (maior primeiro), depois por created_at
+      const { data, error } = await query
+        .order('score_ia', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching leads:', error);
+        throw error;
+      }
+      
+      console.log('✅ [DEBUG] Leads encontrados:', {
+        total: data?.length || 0,
+        leads: data?.slice(0, 3).map((l: any) => ({
+          nome: l.nome,
+          corretor: l.corretor,
+          status: l.status
+        }))
+      });
+      
+      if (isMounted) {
+        setLeads(data || []);
+      }
+      } catch (error) {
+        if (isMounted) {
+          console.error('❌ Erro ao buscar leads:', error);
+          toast({
+            title: "Erro ao carregar leads",
+            description: "Não foi possível carregar os leads. Tente novamente.",
+            variant: "destructive"
+          });
+          setLeads([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Fetch inicial
+    pollLeads();
+
+    // ✅ POLLING GLOBAL: Apenas 1 interval para toda aplicação
+    // ✅ OTIMIZAÇÃO: 60 segundos (era 30s)
+    globalPollingInterval = setInterval(() => {
+      if (isMounted) {
+        pollLeads();
+      }
+    }, 60000);
+
+    // console.log('✅ Polling GLOBAL ativo (60s interval) - Singleton'); // ✅ OTIMIZAÇÃO: Log removido
+
+    // Cleanup
+    return () => {
+      isMounted = false;
+      globalPollingActive = false;
+      if (globalPollingInterval) {
+        clearInterval(globalPollingInterval);
+        globalPollingInterval = null;
+        // console.log('🧹 Polling GLOBAL removido'); // ✅ OTIMIZAÇÃO: Log removido
+      }
+    };
+  }, [user?.id, rolesLoading]); // ✅ user?.id em vez de user (evita re-execução)
 
   // Estatísticas dos leads
   const getLeadsStats = () => {
@@ -310,7 +491,7 @@ export const useLeads = () => {
     createLead,
     updateLead,
     deleteLead,
-    refetch: fetchLeads,
+    refetch: () => fetchLeads(true), // ✅ FORÇAR REFRESH: Limpar cache
     getLeadsStats,
     getLeadsByStatus,
     getLeadsByPeriod,

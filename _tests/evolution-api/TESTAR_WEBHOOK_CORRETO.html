@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Webhook - Evolution API v2</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            color: #0c5460;
+        }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Configurar Webhook Evolution API v2</h1>
+        <span class="badge">MÉTODO CORRETO</span>
+        <p style="color: #666; margin-top: 10px;">Baseado na documentação oficial</p>
+
+        <div class="highlight">
+            <strong>⚠️ IMPORTANTE:</strong> Este script usa os formatos CORRETOS da Evolution API v2:
+            <ul>
+                <li>✅ Eventos em MAIÚSCULAS: <code>MESSAGES_UPSERT</code></li>
+                <li>✅ Campos em camelCase: <code>webhookByEvents</code></li>
+                <li>✅ Campo <code>enabled: true</code> incluído</li>
+            </ul>
+            <strong>Fonte:</strong> <a href="https://doc.evolution-api.com/v2/api-reference/webhook/set" target="_blank">Documentação Oficial</a>
+        </div>
+
+        <!-- PASSO 1 -->
+        <div class="step">
+            <h3>1️⃣ Configurar Webhook</h3>
+            <p>Configura o webhook com o formato CORRETO da Evolution API v2</p>
+            <button onclick="configurarWebhook()" style="font-size: 18px; padding: 15px 30px;">🚀 CONFIGURAR WEBHOOK</button>
+            <div id="result1"></div>
+        </div>
+
+        <!-- PASSO 2 -->
+        <div class="step">
+            <h3>2️⃣ Verificar Webhook</h3>
+            <p>Confirma se o webhook foi configurado corretamente</p>
+            <button onclick="verificarWebhook()">🔍 VERIFICAR CONFIGURAÇÃO</button>
+            <div id="result2"></div>
+        </div>
+
+        <!-- PASSO 3 -->
+        <div class="step">
+            <h3>3️⃣ Testar Manualmente</h3>
+            <p>Envia um webhook de teste para o Supabase</p>
+            <button onclick="testarWebhookManual()">🧪 ENVIAR TESTE</button>
+            <div id="result3"></div>
+        </div>
+
+        <!-- INFO -->
+        <div class="step" style="background: #e7f3ff; border-left-color: #0066cc;">
+            <h3>📚 Formato Correto do Webhook</h3>
+            <div class="code">
+{
+  "enabled": true,              ✅ Obrigatório
+  "url": "...",                 ✅ URL do webhook
+  "webhookByEvents": false,     ✅ camelCase (não snake_case)
+  "webhookBase64": false,       ✅ camelCase
+  "events": [
+    "MESSAGES_UPSERT",          ✅ MAIÚSCULAS com underscore
+    "MESSAGES_UPDATE"           ✅ Não "messages.upsert"
+  ]
+}</div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            evolutionUrl: 'https://api.urbanautobot.com',
+            apiKey: 'cfd9b746ea9e400dc8f4d3e8d57b0180',
+            instanceName: 'gerente_cec3f29d3904',
+            webhookUrl: 'https://bxtuynqauqasigcbocbm.supabase.co/functions/v1/evolution-webhook'
+        };
+
+        function showResult(elementId, data, type = 'info') {
+            const resultDiv = document.getElementById(elementId);
+            const json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            resultDiv.innerHTML = `<div class="result ${type}">${json}</div>`;
+        }
+
+        async function configurarWebhook() {
+            showResult('result1', 'Configurando webhook...', 'info');
+
+            try {
+                console.log('🔧 Configurando webhook com formato correto v2...');
+
+                const response = await fetch(`${CONFIG.evolutionUrl}/webhook/set/${CONFIG.instanceName}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': CONFIG.apiKey
+                    },
+                    body: JSON.stringify({
+                        enabled: true,                    // ✅ Obrigatório
+                        url: CONFIG.webhookUrl,
+                        webhookByEvents: false,           // ✅ camelCase
+                        webhookBase64: false,             // ✅ camelCase
+                        events: [
+                            "MESSAGES_UPSERT",            // ✅ MAIÚSCULAS
+                            "MESSAGES_UPDATE",
+                            "MESSAGES_DELETE",
+                            "SEND_MESSAGE"
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('✅ WEBHOOK CONFIGURADO COM SUCESSO!', data);
+                    showResult('result1', 
+                        '✅ WEBHOOK CONFIGURADO COM SUCESSO!\n\n' + 
+                        JSON.stringify(data, null, 2) + 
+                        '\n\n👉 Agora envie uma mensagem de teste pelo WhatsApp!',
+                        'success'
+                    );
+                } else {
+                    console.error('❌ Erro ao configurar webhook:', response.status, data);
+                    showResult('result1', 
+                        `❌ ERRO (${response.status})\n\n${JSON.stringify(data, null, 2)}`,
+                        'error'
+                    );
+                }
+
+            } catch (error) {
+                console.error('❌ Erro na requisição:', error);
+                showResult('result1', `❌ ERRO: ${error.message}`, 'error');
+            }
+        }
+
+        async function verificarWebhook() {
+            showResult('result2', 'Verificando webhook...', 'info');
+
+            try {
+                console.log('🔍 Verificando webhook configurado...');
+
+                const response = await fetch(`${CONFIG.evolutionUrl}/webhook/find/${CONFIG.instanceName}`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': CONFIG.apiKey
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('✅ Webhook encontrado:', data);
+
+                    // Verificar se está correto
+                    let status = '📋 WEBHOOK ENCONTRADO:\n\n';
+                    status += JSON.stringify(data, null, 2);
+                    status += '\n\n';
+
+                    if (data.enabled && data.url && data.url.includes('evolution-webhook')) {
+                        status += '🎉 CONFIGURAÇÃO ESTÁ CORRETA!\n';
+                        status += '✅ enabled: true\n';
+                        status += `✅ url: ${data.url}\n`;
+                        status += `✅ events: ${data.events?.join(', ')}\n`;
+                        showResult('result2', status, 'success');
+                    } else {
+                        status += '⚠️ Webhook existe mas pode precisar de ajustes\n';
+                        showResult('result2', status, 'info');
+                    }
+                } else {
+                    console.error('❌ Erro ao verificar:', response.status, data);
+                    showResult('result2', 
+                        `❌ ERRO (${response.status})\n\n${JSON.stringify(data, null, 2)}`,
+                        'error'
+                    );
+                }
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showResult('result2', `❌ ERRO: ${error.message}`, 'error');
+            }
+        }
+
+        async function testarWebhookManual() {
+            showResult('result3', 'Enviando webhook de teste...', 'info');
+
+            try {
+                console.log('🧪 Enviando webhook de teste para Supabase...');
+
+                const response = await fetch(CONFIG.webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        event: 'MESSAGES_UPSERT',         // ✅ Formato v2
+                        data: {
+                            key: {
+                                fromMe: false,
+                                remoteJid: '5511999999999@s.whatsapp.net'
+                            },
+                            message: {
+                                conversation: '🧪 Teste de webhook! Quero comprar um apartamento!'
+                            },
+                            pushName: 'Teste Manual'
+                        },
+                        instance: CONFIG.instanceName
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('✅ Webhook testado com sucesso!', data);
+                    showResult('result3', 
+                        '✅ TESTE ENVIADO COM SUCESSO!\n\n' + 
+                        JSON.stringify(data, null, 2) + 
+                        '\n\n👉 Verifique se o lead foi criado no sistema!',
+                        'success'
+                    );
+                } else {
+                    console.error('❌ Erro no teste:', response.status, data);
+                    showResult('result3', 
+                        `⚠️ RESPOSTA (${response.status})\n\n${JSON.stringify(data, null, 2)}`,
+                        'info'
+                    );
+                }
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showResult('result3', `❌ ERRO: ${error.message}`, 'error');
+            }
+        }
+
+        // Log inicial
+        console.log('🚀 Página carregada!');
+        console.log('📋 Config:', CONFIG);
+        console.log('📚 Documentação: https://doc.evolution-api.com/v2/api-reference/webhook/set');
+    </script>
+</body>
+</html>

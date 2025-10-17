@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/auth-context';
+import { useSecureAuth } from '@/hooks/use-secure-auth';
 
 export interface UserProfile {
   id: string;
@@ -14,7 +14,7 @@ export interface UserProfile {
 export const useProfile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useSecureAuth();
 
   useEffect(() => {
     if (!user) {

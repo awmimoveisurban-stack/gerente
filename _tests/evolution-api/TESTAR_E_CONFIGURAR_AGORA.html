@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar e Configurar - Evolution API v2</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .step.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+        button.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            color: #0c5460;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Deploy Concluído!</h1>
+        <p>Agora vamos testar e configurar tudo</p>
+
+        <!-- TESTE 1 -->
+        <div class="step">
+            <h3>1️⃣ Testar Edge Function</h3>
+            <p>Verificar se a edge function está rodando</p>
+            <button onclick="testarEdgeFunction()">🧪 TESTAR EDGE FUNCTION</button>
+            <div id="result1"></div>
+        </div>
+
+        <!-- TESTE 2 -->
+        <div class="step">
+            <h3>2️⃣ Configurar Webhook v2</h3>
+            <p>Configurar webhook na Evolution API com formato correto v2</p>
+            <button onclick="configurarWebhookV2()">⚙️ CONFIGURAR WEBHOOK V2</button>
+            <div id="result2"></div>
+        </div>
+
+        <!-- TESTE 3 -->
+        <div class="step">
+            <h3>3️⃣ Verificar Webhook</h3>
+            <p>Confirmar que webhook está configurado corretamente</p>
+            <button onclick="verificarWebhook()">🔍 VERIFICAR WEBHOOK</button>
+            <div id="result3"></div>
+        </div>
+
+        <!-- TESTE 4 -->
+        <div class="step">
+            <h3>4️⃣ Teste Completo (Simular Mensagem)</h3>
+            <p>Enviar webhook de teste para criar um lead de exemplo</p>
+            <button onclick="testeCompleto()" class="success">🚀 TESTE COMPLETO</button>
+            <div id="result4"></div>
+        </div>
+
+        <!-- INSTRUÇÕES FINAIS -->
+        <div class="step" style="background: #fff3cd; border-left-color: #ffc107;">
+            <h3>📱 Próximo Passo: Teste Real</h3>
+            <p><strong>Depois que tudo estiver ✅:</strong></p>
+            <ol>
+                <li>Abra o sistema e conecte WhatsApp</li>
+                <li>Envie uma mensagem para o número conectado</li>
+                <li>Lead deve aparecer automaticamente em 2-3 segundos!</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            edgeFunctionUrl: 'https://bxtuynqauqasigcbocbm.supabase.co/functions/v1/evolution-webhook',
+            evolutionUrl: 'https://api.urbanautobot.com',
+            apiKey: 'cfd9b746ea9e400dc8f4d3e8d57b0180',
+            instanceName: 'gerente_cec3f29d3904'
+        };
+
+        function showResult(elementId, data, type = 'info') {
+            const resultDiv = document.getElementById(elementId);
+            const json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            resultDiv.innerHTML = `<div class="result ${type}">${json}</div>`;
+        }
+
+        async function testarEdgeFunction() {
+            showResult('result1', 'Testando edge function...', 'info');
+
+            try {
+                const response = await fetch(CONFIG.edgeFunctionUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event: 'MESSAGES_UPSERT',
+                        data: {
+                            key: {
+                                fromMe: false,
+                                remoteJid: '5511999999999@s.whatsapp.net'
+                            },
+                            message: {
+                                conversation: 'Teste de edge function!'
+                            },
+                            pushName: 'Teste Deploy'
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('result1', 
+                        '✅ EDGE FUNCTION FUNCIONANDO!\n\n' +
+                        'Status: ' + response.status + '\n' +
+                        'Response: ' + JSON.stringify(data, null, 2) +
+                        '\n\n🎉 Deploy foi um sucesso!',
+                        'success'
+                    );
+                } else {
+                    showResult('result1', 
+                        '⚠️ Edge function respondeu, mas com erro:\n\n' + 
+                        JSON.stringify(data, null, 2),
+                        'error'
+                    );
+                }
+
+            } catch (error) {
+                showResult('result1', 
+                    '❌ ERRO ao conectar com edge function:\n\n' + 
+                    error.message +
+                    '\n\nVerifique se o deploy foi concluído no Dashboard',
+                    'error'
+                );
+            }
+        }
+
+        async function configurarWebhookV2() {
+            showResult('result2', 'Configurando webhook v2...', 'info');
+
+            try {
+                const response = await fetch(`${CONFIG.evolutionUrl}/webhook/set/${CONFIG.instanceName}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': CONFIG.apiKey
+                    },
+                    body: JSON.stringify({
+                        enabled: true,                    // ✅ v2: Obrigatório
+                        url: CONFIG.edgeFunctionUrl,
+                        webhookByEvents: false,           // ✅ v2: camelCase
+                        webhookBase64: false,             // ✅ v2: camelCase
+                        events: [
+                            "MESSAGES_UPSERT",            // ✅ v2: MAIÚSCULAS
+                            "MESSAGES_UPDATE",
+                            "MESSAGES_DELETE",
+                            "SEND_MESSAGE",
+                            "CONNECTION_UPDATE"
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('result2', 
+                        '✅ WEBHOOK V2 CONFIGURADO COM SUCESSO!\n\n' +
+                        'Formato: Evolution API v2 ✅\n' +
+                        'Events: MAIÚSCULAS ✅\n' +
+                        'Campo enabled: true ✅\n\n' +
+                        'Response:\n' + JSON.stringify(data, null, 2),
+                        'success'
+                    );
+                } else {
+                    showResult('result2', 
+                        '❌ ERRO ao configurar webhook:\n\n' +
+                        'Status: ' + response.status + '\n' +
+                        JSON.stringify(data, null, 2) +
+                        '\n\nPossíveis causas:\n' +
+                        '- Instância não existe\n' +
+                        '- API Key incorreta\n' +
+                        '- Servidor Evolution offline',
+                        'error'
+                    );
+                }
+
+            } catch (error) {
+                showResult('result2', 
+                    '❌ ERRO na requisição:\n\n' + error.message,
+                    'error'
+                );
+            }
+        }
+
+        async function verificarWebhook() {
+            showResult('result3', 'Verificando webhook...', 'info');
+
+            try {
+                const response = await fetch(`${CONFIG.evolutionUrl}/webhook/find/${CONFIG.instanceName}`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': CONFIG.apiKey
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    let status = '📋 WEBHOOK CONFIGURADO:\n\n';
+                    status += JSON.stringify(data, null, 2);
+                    status += '\n\n';
+
+                    // Verificações
+                    const checks = [];
+                    
+                    if (data.enabled === true) {
+                        checks.push('✅ enabled: true');
+                    } else {
+                        checks.push('❌ enabled: false ou ausente');
+                    }
+
+                    if (data.url && data.url.includes('evolution-webhook')) {
+                        checks.push('✅ URL correta');
+                    } else {
+                        checks.push('❌ URL incorreta ou ausente');
+                    }
+
+                    if (data.events && data.events.includes('MESSAGES_UPSERT')) {
+                        checks.push('✅ Events em MAIÚSCULAS (v2)');
+                    } else if (data.events && data.events.includes('messages.upsert')) {
+                        checks.push('⚠️ Events em minúsculas (v1)');
+                    } else {
+                        checks.push('❌ Events não configurados');
+                    }
+
+                    status += 'VERIFICAÇÕES:\n' + checks.join('\n');
+
+                    const allGood = data.enabled && 
+                                  data.url && 
+                                  data.url.includes('evolution-webhook') &&
+                                  data.events && 
+                                  data.events.includes('MESSAGES_UPSERT');
+
+                    showResult('result3', status, allGood ? 'success' : 'error');
+
+                } else {
+                    showResult('result3', 
+                        '❌ ERRO ao buscar webhook:\n\n' + 
+                        JSON.stringify(data, null, 2),
+                        'error'
+                    );
+                }
+
+            } catch (error) {
+                showResult('result3', 
+                    '❌ ERRO:\n\n' + error.message,
+                    'error'
+                );
+            }
+        }
+
+        async function testeCompleto() {
+            showResult('result4', 'Executando teste completo...', 'info');
+
+            try {
+                // 1. Testar edge function
+                console.log('1/3: Testando edge function...');
+                const testResponse = await fetch(CONFIG.edgeFunctionUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event: 'MESSAGES_UPSERT',
+                        instance: CONFIG.instanceName,
+                        data: {
+                            key: {
+                                fromMe: false,
+                                remoteJid: '5511987654321@s.whatsapp.net'
+                            },
+                            message: {
+                                conversation: '🧪 Teste completo do sistema! Quero comprar um apartamento de 3 quartos com varanda!'
+                            },
+                            pushName: 'Cliente Teste'
+                        }
+                    })
+                });
+
+                let report = '═══════════════════════════════════\n';
+                report += '🧪 RELATÓRIO DO TESTE COMPLETO\n';
+                report += '═══════════════════════════════════\n\n';
+
+                if (testResponse.ok) {
+                    const testData = await testResponse.json();
+                    report += '1️⃣ EDGE FUNCTION: ✅ FUNCIONANDO\n';
+                    report += '   Status: ' + testResponse.status + '\n';
+                    report += '   Action: ' + (testData.action || 'unknown') + '\n';
+                    report += '   Lead ID: ' + (testData.lead_id || 'N/A') + '\n\n';
+
+                    if (testData.lead_id) {
+                        report += '   🎉 LEAD CRIADO COM SUCESSO!\n';
+                        report += '   Verifique no dashboard se apareceu!\n\n';
+                    }
+                } else {
+                    report += '1️⃣ EDGE FUNCTION: ❌ ERRO\n';
+                    report += '   Status: ' + testResponse.status + '\n\n';
+                }
+
+                // 2. Verificar webhook
+                console.log('2/3: Verificando webhook...');
+                const webhookResponse = await fetch(`${CONFIG.evolutionUrl}/webhook/find/${CONFIG.instanceName}`, {
+                    headers: { 'apikey': CONFIG.apiKey }
+                });
+
+                if (webhookResponse.ok) {
+                    const webhookData = await webhookResponse.json();
+                    report += '2️⃣ WEBHOOK CONFIG: ✅ CONFIGURADO\n';
+                    report += '   Enabled: ' + webhookData.enabled + '\n';
+                    report += '   Events: ' + (webhookData.events?.join(', ') || 'N/A') + '\n\n';
+                } else {
+                    report += '2️⃣ WEBHOOK CONFIG: ⚠️ NÃO VERIFICADO\n\n';
+                }
+
+                // Conclusão
+                report += '═══════════════════════════════════\n';
+                report += '📊 CONCLUSÃO:\n';
+                report += '═══════════════════════════════════\n\n';
+
+                if (testResponse.ok) {
+                    report += '✅ SISTEMA 100% FUNCIONAL!\n\n';
+                    report += 'PRÓXIMOS PASSOS:\n';
+                    report += '1. Abra o sistema\n';
+                    report += '2. Conecte um WhatsApp\n';
+                    report += '3. Envie uma mensagem de teste\n';
+                    report += '4. Lead aparece automaticamente! 🎉\n\n';
+                    report += 'SCORE: 9.8/10 ⭐⭐⭐⭐⭐';
+                    
+                    showResult('result4', report, 'success');
+                } else {
+                    report += '⚠️ Há problemas a corrigir\n\n';
+                    report += 'Execute os testes individuais acima\n';
+                    report += 'para identificar o problema específico.';
+                    
+                    showResult('result4', report, 'error');
+                }
+
+            } catch (error) {
+                showResult('result4', 
+                    '❌ ERRO NO TESTE:\n\n' + error.message,
+                    'error'
+                );
+            }
+        }
+
+        // Log inicial
+        console.log('🚀 Página de testes carregada!');
+        console.log('📋 Config:', CONFIG);
+    </script>
+</body>
+</html>

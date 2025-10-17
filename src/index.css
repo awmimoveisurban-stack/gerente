@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ✅ Animação para loading shimmer */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Modern Professional CRM Design System */
 
 @layer base {
@@ -61,12 +71,12 @@
     --sidebar-accent-foreground: 220 15% 88%;
     --sidebar-border: 220 25% 25%;
     --sidebar-ring: 220 70% 55%;
-    
+
     /* Shadows - Professional depth */
     --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.1);
     --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --shadow-strong: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-    
+
     /* Animations */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -128,31 +138,31 @@
     @apply bg-card border border-border rounded-lg shadow-[var(--shadow-soft)] 
            hover:shadow-[var(--shadow-medium)] transition-[var(--transition-smooth)];
   }
-  
+
   .crm-status-badge {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border;
   }
-  
+
   .crm-status-novo {
     @apply bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-800;
   }
-  
+
   .crm-status-atendimento {
     @apply bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800;
   }
-  
+
   .crm-status-visita {
     @apply bg-violet-50 text-violet-800 border-violet-200 dark:bg-violet-950 dark:text-violet-200 dark:border-violet-800;
   }
-  
+
   .crm-status-proposta {
     @apply bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-800;
   }
-  
+
   .crm-status-fechado {
     @apply bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800;
   }
-  
+
   .crm-status-perdido {
     @apply bg-red-50 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-800;
   }

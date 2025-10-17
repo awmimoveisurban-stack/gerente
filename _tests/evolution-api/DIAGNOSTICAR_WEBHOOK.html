@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnosticar Webhook Evolution</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .config {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        input {
+            padding: 8px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 100%;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        .endpoint-code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        .step {
+            background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .step h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnosticar Configuração de Webhook</h1>
+        <p class="subtitle">Vamos descobrir o que está impedindo o webhook de funcionar</p>
+
+        <div class="config">
+            <h3>⚙️ Configuração Atual</h3>
+            <div style="margin: 10px 0;">
+                <strong>Evolution URL:</strong><br>
+                <input type="text" id="evolutionUrl" value="https://api.urbanautobot.com">
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>API Key:</strong><br>
+                <input type="text" id="apiKey" value="cfd9b746ea9e400dc8f4d3e8d57b0180">
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Nome da Instância:</strong><br>
+                <input type="text" id="instanceName" value="gerente_cec3f29d3904">
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Webhook URL:</strong><br>
+                <input type="text" id="webhookUrl" value="https://bxtuynqauqasigcbocbm.supabase.co/functions/v1/evolution-webhook">
+            </div>
+        </div>
+
+        <!-- TESTE 1: Verificar API -->
+        <div class="test-section">
+            <h3>1️⃣ Verificar Acesso à API</h3>
+            <p>Testa se conseguimos acessar a Evolution API</p>
+            <button onclick="testApiAccess()">🔍 Testar Acesso</button>
+            <div id="result1"></div>
+        </div>
+
+        <!-- TESTE 2: Listar Instâncias -->
+        <div class="test-section">
+            <h3>2️⃣ Listar Instâncias</h3>
+            <p>Verifica se a instância existe no servidor</p>
+            <button onclick="testListInstances()">📱 Listar Instâncias</button>
+            <div id="result2"></div>
+        </div>
+
+        <!-- TESTE 3: Verificar Status da Instância -->
+        <div class="test-section">
+            <h3>3️⃣ Status da Instância</h3>
+            <p>Verifica se a instância está conectada</p>
+            <button onclick="testInstanceStatus()">✅ Verificar Status</button>
+            <div id="result3"></div>
+        </div>
+
+        <!-- TESTE 4: Verificar Webhook Atual -->
+        <div class="test-section">
+            <h3>4️⃣ Verificar Webhook Atual</h3>
+            <p>Vê se já existe algum webhook configurado</p>
+            <button onclick="testGetWebhook()">🔔 Ver Webhook Atual</button>
+            <div id="result4"></div>
+        </div>
+
+        <!-- TESTE 5: Tentar Configurar Webhook -->
+        <div class="test-section">
+            <h3>5️⃣ Configurar Webhook (Método 1)</h3>
+            <p>Tenta configurar usando /webhook/set</p>
+            <div class="endpoint-code">POST /webhook/set/:instanceName</div>
+            <button onclick="testSetWebhook1()">⚙️ Tentar Método 1</button>
+            <div id="result5"></div>
+        </div>
+
+        <!-- TESTE 6: Método Alternativo -->
+        <div class="test-section">
+            <h3>6️⃣ Configurar Webhook (Método 2)</h3>
+            <p>Tenta configurar usando endpoint alternativo</p>
+            <div class="endpoint-code">POST /instance/setWebhook/:instanceName</div>
+            <button onclick="testSetWebhook2()">⚙️ Tentar Método 2</button>
+            <div id="result6"></div>
+        </div>
+
+        <!-- TESTE 7: Update Instance -->
+        <div class="test-section">
+            <h3>7️⃣ Atualizar Instância com Webhook</h3>
+            <p>Tenta atualizar a instância inteira com webhook</p>
+            <div class="endpoint-code">PUT /instance/update/:instanceName</div>
+            <button onclick="testUpdateInstance()">🔄 Atualizar Instância</button>
+            <div id="result7"></div>
+        </div>
+
+        <!-- TESTE COMPLETO -->
+        <div class="step">
+            <h3>🚀 EXECUTAR DIAGNÓSTICO COMPLETO</h3>
+            <p>Executa todos os testes automaticamente e mostra um relatório</p>
+            <button onclick="runFullDiagnostic()" style="font-size: 18px; padding: 15px 30px;">🚀 DIAGNÓSTICO COMPLETO</button>
+            <div id="resultFull"></div>
+        </div>
+    </div>
+
+    <script>
+        function getConfig() {
+            return {
+                url: document.getElementById('evolutionUrl').value,
+                apiKey: document.getElementById('apiKey').value,
+                instanceName: document.getElementById('instanceName').value,
+                webhookUrl: document.getElementById('webhookUrl').value
+            };
+        }
+
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = '<div class="result info"><div class="loading"></div>Testando...</div>';
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const resultDiv = document.getElementById(elementId);
+            const className = isError ? 'error' : 'success';
+            const json = JSON.stringify(data, null, 2);
+            resultDiv.innerHTML = `<div class="result ${className}">${json}</div>`;
+        }
+
+        async function makeRequest(endpoint, method = 'GET', body = null) {
+            const config = getConfig();
+            const url = `${config.url}${endpoint}`;
+            
+            console.log(`🔍 ${method} ${url}`);
+            
+            const options = {
+                method: method,
+                headers: {
+                    'apikey': config.apiKey,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+                console.log('📦 Body:', body);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                let data;
+                
+                try {
+                    data = await response.json();
+                } catch {
+                    data = await response.text();
+                }
+                
+                const result = {
+                    status: response.status,
+                    ok: response.ok,
+                    statusText: response.statusText,
+                    url: url,
+                    data: data
+                };
+
+                console.log('📨 Response:', result);
+                return result;
+            } catch (error) {
+                const result = {
+                    status: 0,
+                    ok: false,
+                    statusText: 'Network Error',
+                    url: url,
+                    error: error.message
+                };
+                console.error('❌ Error:', result);
+                return result;
+            }
+        }
+
+        async function testApiAccess() {
+            showLoading('result1');
+            const result = await makeRequest('/');
+            showResult('result1', result, !result.ok);
+        }
+
+        async function testListInstances() {
+            showLoading('result2');
+            const result = await makeRequest('/instance/fetchInstances');
+            showResult('result2', result, !result.ok);
+        }
+
+        async function testInstanceStatus() {
+            showLoading('result3');
+            const config = getConfig();
+            const result = await makeRequest(`/instance/connectionState/${config.instanceName}`);
+            showResult('result3', result, !result.ok);
+        }
+
+        async function testGetWebhook() {
+            showLoading('result4');
+            const config = getConfig();
+            const result = await makeRequest(`/webhook/find/${config.instanceName}`);
+            showResult('result4', result, !result.ok);
+        }
+
+        async function testSetWebhook1() {
+            showLoading('result5');
+            const config = getConfig();
+            const result = await makeRequest(
+                `/webhook/set/${config.instanceName}`,
+                'POST',
+                {
+                    url: config.webhookUrl,
+                    webhook_by_events: true,
+                    webhook_base64: false,
+                    events: ['messages.upsert', 'messages.update']
+                }
+            );
+            showResult('result5', result, !result.ok);
+        }
+
+        async function testSetWebhook2() {
+            showLoading('result6');
+            const config = getConfig();
+            const result = await makeRequest(
+                `/instance/setWebhook/${config.instanceName}`,
+                'POST',
+                {
+                    url: config.webhookUrl,
+                    webhook_by_events: true,
+                    events: ['messages.upsert']
+                }
+            );
+            showResult('result6', result, !result.ok);
+        }
+
+        async function testUpdateInstance() {
+            showLoading('result7');
+            const config = getConfig();
+            const result = await makeRequest(
+                `/instance/update/${config.instanceName}`,
+                'PUT',
+                {
+                    webhook: {
+                        url: config.webhookUrl,
+                        webhook_by_events: true,
+                        events: ['messages.upsert']
+                    }
+                }
+            );
+            showResult('result7', result, !result.ok);
+        }
+
+        async function runFullDiagnostic() {
+            const resultDiv = document.getElementById('resultFull');
+            resultDiv.innerHTML = '<div class="result info"><div class="loading"></div>Executando diagnóstico completo...</div>';
+
+            const results = {
+                apiAccess: await makeRequest('/'),
+                listInstances: await makeRequest('/instance/fetchInstances'),
+                instanceStatus: null,
+                currentWebhook: null,
+                setWebhook1: null,
+                setWebhook2: null,
+                updateInstance: null
+            };
+
+            const config = getConfig();
+            results.instanceStatus = await makeRequest(`/instance/connectionState/${config.instanceName}`);
+            results.currentWebhook = await makeRequest(`/webhook/find/${config.instanceName}`);
+            
+            // Tentar configurar webhook (método 1)
+            results.setWebhook1 = await makeRequest(
+                `/webhook/set/${config.instanceName}`,
+                'POST',
+                {
+                    url: config.webhookUrl,
+                    webhook_by_events: true,
+                    webhook_base64: false,
+                    events: ['messages.upsert', 'messages.update']
+                }
+            );
+
+            // Se falhou, tentar método 2
+            if (!results.setWebhook1.ok) {
+                results.setWebhook2 = await makeRequest(
+                    `/instance/setWebhook/${config.instanceName}`,
+                    'POST',
+                    {
+                        url: config.webhookUrl,
+                        webhook_by_events: true,
+                        events: ['messages.upsert']
+                    }
+                );
+            }
+
+            // Se ainda falhou, tentar update
+            if (!results.setWebhook1.ok && (!results.setWebhook2 || !results.setWebhook2.ok)) {
+                results.updateInstance = await makeRequest(
+                    `/instance/update/${config.instanceName}`,
+                    'PUT',
+                    {
+                        webhook: {
+                            url: config.webhookUrl,
+                            webhook_by_events: true,
+                            events: ['messages.upsert']
+                        }
+                    }
+                );
+            }
+
+            // Gerar relatório
+            let report = '═══════════════════════════════════════\n';
+            report += '📊 RELATÓRIO DE DIAGNÓSTICO\n';
+            report += '═══════════════════════════════════════\n\n';
+
+            // API Access
+            report += '1️⃣ ACESSO À API:\n';
+            report += results.apiAccess.ok ? '   ✅ OK\n' : `   ❌ FALHOU (${results.apiAccess.status})\n`;
+            report += '\n';
+
+            // Instances
+            report += '2️⃣ LISTAR INSTÂNCIAS:\n';
+            if (results.listInstances.ok) {
+                report += '   ✅ OK\n';
+                const instances = results.listInstances.data;
+                if (Array.isArray(instances)) {
+                    report += `   📱 Total: ${instances.length} instância(s)\n`;
+                    instances.forEach(inst => {
+                        report += `      - ${inst.instanceName || inst.instance || '?'}\n`;
+                    });
+                }
+            } else {
+                report += `   ❌ FALHOU (${results.listInstances.status})\n`;
+            }
+            report += '\n';
+
+            // Instance Status
+            report += '3️⃣ STATUS DA INSTÂNCIA:\n';
+            if (results.instanceStatus.ok) {
+                report += '   ✅ OK\n';
+                report += `   Estado: ${JSON.stringify(results.instanceStatus.data)}\n`;
+            } else {
+                report += `   ❌ FALHOU (${results.instanceStatus.status})\n`;
+            }
+            report += '\n';
+
+            // Current Webhook
+            report += '4️⃣ WEBHOOK ATUAL:\n';
+            if (results.currentWebhook.ok) {
+                report += '   ✅ OK\n';
+                report += `   ${JSON.stringify(results.currentWebhook.data, null, 2)}\n`;
+            } else {
+                report += `   ⚠️ Não configurado ou erro (${results.currentWebhook.status})\n`;
+            }
+            report += '\n';
+
+            // Set Webhook
+            report += '5️⃣ CONFIGURAR WEBHOOK:\n';
+            if (results.setWebhook1.ok) {
+                report += '   ✅ SUCESSO (Método 1)!\n';
+                report += '   🎉 WEBHOOK CONFIGURADO!\n';
+            } else if (results.setWebhook2 && results.setWebhook2.ok) {
+                report += '   ✅ SUCESSO (Método 2)!\n';
+                report += '   🎉 WEBHOOK CONFIGURADO!\n';
+            } else if (results.updateInstance && results.updateInstance.ok) {
+                report += '   ✅ SUCESSO (Update Instance)!\n';
+                report += '   🎉 WEBHOOK CONFIGURADO!\n';
+            } else {
+                report += '   ❌ TODOS OS MÉTODOS FALHARAM\n';
+                report += `   Método 1: ${results.setWebhook1.status} - ${JSON.stringify(results.setWebhook1.data)}\n`;
+                if (results.setWebhook2) {
+                    report += `   Método 2: ${results.setWebhook2.status} - ${JSON.stringify(results.setWebhook2.data)}\n`;
+                }
+                if (results.updateInstance) {
+                    report += `   Update: ${results.updateInstance.status} - ${JSON.stringify(results.updateInstance.data)}\n`;
+                }
+            }
+            report += '\n';
+
+            // Conclusão
+            report += '═══════════════════════════════════════\n';
+            report += '📋 CONCLUSÃO:\n';
+            report += '═══════════════════════════════════════\n';
+            
+            const webhookConfigured = results.setWebhook1.ok || 
+                                     (results.setWebhook2 && results.setWebhook2.ok) || 
+                                     (results.updateInstance && results.updateInstance.ok);
+            
+            if (webhookConfigured) {
+                report += '✅ WEBHOOK CONFIGURADO COM SUCESSO!\n';
+                report += '\n👉 PRÓXIMO PASSO: Envie uma mensagem de teste!\n';
+            } else {
+                report += '❌ NÃO FOI POSSÍVEL CONFIGURAR O WEBHOOK\n';
+                report += '\n💡 SUGESTÕES:\n';
+                report += '1. Verifique se a API Key está correta\n';
+                report += '2. Verifique se o nome da instância está correto\n';
+                report += '3. Consulte a documentação da Evolution API\n';
+                report += '4. Entre em contato com suporte do servidor\n';
+            }
+
+            const className = webhookConfigured ? 'success' : 'error';
+            resultDiv.innerHTML = `<div class="result ${className}">${report}</div>`;
+
+            // Scroll para o resultado
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Auto-log
+        console.log('🔍 Página de diagnóstico carregada!');
+        console.log('📌 Use os botões para testar cada endpoint individualmente');
+        console.log('🚀 Ou clique em "DIAGNÓSTICO COMPLETO" para testar tudo de uma vez');
+    </script>
+</body>
+</html>

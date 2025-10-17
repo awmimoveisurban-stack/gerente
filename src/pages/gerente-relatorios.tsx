@@ -93,44 +93,73 @@ export default function GerenteRelatorios() {
   const progressoMeta = leadsPeriodo.length > 0 ? Math.min((leadsPeriodo.length / metaMensal) * 100, 100) : 0;
 
   const exportarRelatorio = () => {
-    const dados = {
-      tipo: "Relatório Gerencial",
-      periodo: `${periodo} dias`,
-      totalLeads: leadsFiltrados.length,
-      leadsPorStatus,
-      valorTotalVendas,
-      taxaConversao,
-      leadsPorMes,
-      leadsAtivos,
-      tempoMedioVenda,
-      metaMensal,
-      performanceMeta,
-      metricasGerenciais: {
-        valorTotalPipeline,
-        ticketMedio,
-        leadsNovos,
-        leadsInteressados,
-        leadsVisitas,
-        leadsPropostas,
-        leadsFechados,
-        progressoMeta: `${progressoMeta.toFixed(1)}%`
-      }
-    };
-    
-    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `relatorio-gerencial-${new Date().toISOString().split('T')[0]}.json`;
+    try {
+      // Gerar CSV formatado
+      let csv = '📊 RELATÓRIO GERENCIAL - SUPABASE DEALS\n\n';
+      csv += `Data de Geração: ${new Date().toLocaleString('pt-BR')}\n`;
+      csv += `Período: Últimos ${periodo} dias\n\n`;
+      
+      // Métricas Principais
+      csv += '=== MÉTRICAS PRINCIPAIS ===\n';
+      csv += `Total de Leads,${totalLeads}\n`;
+      csv += `Leads Fechados,${leadsFechados}\n`;
+      csv += `Leads Ativos,${leadsAtivos}\n`;
+      csv += `Taxa de Conversão,${taxaConversao}%\n`;
+      csv += `Valor Total Vendido,R$ ${valorTotalVendas.toLocaleString('pt-BR')}\n`;
+      csv += `Ticket Médio,R$ ${ticketMedio.toLocaleString('pt-BR')}\n`;
+      csv += `Valor Pipeline,R$ ${valorTotalPipeline.toLocaleString('pt-BR')}\n\n`;
+      
+      // Performance vs Meta
+      csv += '=== PERFORMANCE VS META ===\n';
+      csv += `Meta Mensal,${metaMensal} leads\n`;
+      csv += `Realizado (Período),${leadsPeriodo.length} leads\n`;
+      csv += `Performance,${performanceMeta}%\n`;
+      csv += `Progresso Meta,${progressoMeta.toFixed(1)}%\n\n`;
+      
+      // Leads por Status
+      csv += '=== LEADS POR STATUS ===\n';
+      Object.entries(leadsPorStatus).forEach(([status, count]) => {
+        csv += `${status},${count}\n`;
+      });
+      csv += '\n';
+      
+      // Leads por Mês
+      csv += '=== EVOLUÇÃO MENSAL ===\n';
+      Object.entries(leadsPorMes).forEach(([mes, count]) => {
+        csv += `${mes},${count}\n`;
+      });
+      csv += '\n';
+      
+      // Lista de Leads do Período
+      csv += '=== LEADS DO PERÍODO ===\n';
+      csv += 'Nome,Status,Corretor,Valor,Data\n';
+      leadsFiltrados.forEach(lead => {
+        csv += `${lead.nome},${lead.status},${lead.corretor || 'Sem corretor'},R$ ${(lead.valor_interesse || 0).toLocaleString('pt-BR')},${new Date(lead.created_at).toLocaleDateString('pt-BR')}\n`;
+      });
+      
+      // Download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-gerencial-${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast({
-      title: "Relatório Gerencial Exportado",
-      description: `Relatório dos últimos ${periodo} dias exportado com sucesso`,
-    });
+      toast({
+        title: "Relatório Gerencial Exportado",
+        description: `Relatório CSV dos últimos ${periodo} dias com ${leadsFiltrados.length} leads`,
+      });
+    } catch (error) {
+      console.error('Erro ao exportar relatório:', error);
+      toast({
+        title: "Erro na Exportação",
+        description: "Não foi possível exportar o relatório.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewTodosLeads = () => {
@@ -142,7 +171,7 @@ export default function GerenteRelatorios() {
   };
 
   const handleViewEquipe = () => {
-    navigate('/gerente/equipe');
+    navigate('/gerente-equipe'); // ✅ FIX: Padronizado para hífen
     toast({
       title: "Navegando para Equipe",
       description: "Redirecionando para a página de gestão da equipe",
@@ -159,84 +188,91 @@ export default function GerenteRelatorios() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-violet-200/50 dark:border-gray-700/50">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
+      <div className="">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="px-0 py-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div className="flex items-center gap-3">
                 <div className="p-2 bg-violet-500 rounded-xl">
-                  <BarChart3 className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                  <BarChart3 className="h-5 w-5 text-white" />
                 </div>
-                Relatórios Gerenciais
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                📊 Visão estratégica completa da performance da equipe e operações
-              </p>
-            </div>
-            <div className="flex gap-3 w-full md:w-auto">
-              <Button 
-                variant="outline"
-                onClick={handleViewTodosLeads}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-blue-50 dark:hover:bg-blue-950/20"
-                aria-label="Ver todos os leads"
-                title="Ver todos os leads"
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Todos os Leads
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={handleViewEquipe}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-purple-50 dark:hover:bg-purple-950/20"
-                aria-label="Ver gestão da equipe"
-                title="Ver gestão da equipe"
-              >
-                <Building2 className="mr-2 h-4 w-4" />
-                Equipe
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={handleViewKanban}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
-                aria-label="Ver quadro Kanban"
-                title="Ver quadro Kanban"
-              >
-                <LayoutGrid className="mr-2 h-4 w-4" />
-                Kanban
-              </Button>
-              <Button 
-                onClick={exportarRelatorio}
-                className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                aria-label="Exportar relatório gerencial"
-                title="Exportar relatório gerencial"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Exportar
-              </Button>
+                <div>
+                  <h1 className="text-xl lg:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    Relatórios Gerenciais
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
+                    📊 Visão estratégica completa da performance
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewTodosLeads}
+                  className="flex-1 lg:flex-none bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Todos os Leads</span>
+                  <span className="sm:hidden">Leads</span>
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewEquipe}
+                  className="flex-1 lg:flex-none bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                >
+                  <Building2 className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Equipe</span>
+                  <span className="sm:hidden">Equipe</span>
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewKanban}
+                  className="flex-1 lg:flex-none bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                >
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Kanban</span>
+                  <span className="sm:hidden">Kanban</span>
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={exportarRelatorio}
+                  className="flex-1 lg:flex-none bg-violet-600 hover:bg-violet-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Exportar</span>
+                  <span className="sm:hidden">Export</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Filtros */}
-        <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200/50 dark:border-gray-700/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <div className="p-1.5 bg-violet-500 rounded-lg">
-                    <Filter className="h-4 w-4 text-white" />
-                  </div>
-                  Filtros Gerenciais
-                </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-400 mt-1">
-                  📊 Configure os parâmetros para análise estratégica detalhada
-                </CardDescription>
+        {/* Main Content */}
+        <div className="space-y-6">
+
+          {/* Filtros */}
+          <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200/50 dark:border-gray-700/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg lg:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <div className="p-1.5 bg-violet-500 rounded-lg">
+                      <Filter className="h-4 w-4 text-white" />
+                    </div>
+                    Filtros Gerenciais
+                  </CardTitle>
+                  <CardDescription className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
+                    📊 Configure os parâmetros para análise estratégica detalhada
+                  </CardDescription>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            </CardHeader>
+            <CardContent className="p-4 lg:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
@@ -296,95 +332,95 @@ export default function GerenteRelatorios() {
           </CardContent>
         </Card>
 
-        {/* Métricas Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          <div className="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950/30 dark:to-violet-900/30 p-6 rounded-2xl border border-violet-200/50 dark:border-violet-800/50 hover:shadow-lg transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-violet-700 dark:text-violet-300">👥 Total de Leads</p>
-                <p className="text-3xl font-bold text-violet-900 dark:text-violet-100 mt-1">{leadsFiltrados.length}</p>
-                <p className="text-xs text-violet-600 dark:text-violet-400 mt-2 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-violet-500 rounded-full"></span>
-                  {performanceMeta}% da meta mensal
-                </p>
-                <div className="mt-2">
-                  <Progress value={progressoMeta} className="h-2" />
+          {/* Métricas Principais */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            <div className="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950/30 dark:to-violet-900/30 p-4 lg:p-6 rounded-xl border border-violet-200/50 dark:border-violet-800/50 hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-semibold text-violet-700 dark:text-violet-300">👥 Total de Leads</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-violet-900 dark:text-violet-100 mt-1">{leadsFiltrados.length}</p>
+                  <p className="text-xs text-violet-600 dark:text-violet-400 mt-2 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-violet-500 rounded-full"></span>
+                    {performanceMeta}% da meta mensal
+                  </p>
+                  <div className="mt-2">
+                    <Progress value={progressoMeta} className="h-2" />
+                  </div>
+                </div>
+                <div className="p-2 lg:p-3 bg-violet-500 rounded-xl flex-shrink-0 ml-3">
+                  <Users className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
                 </div>
               </div>
-              <div className="p-3 bg-violet-500 rounded-xl">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-            </div>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/30 p-6 rounded-2xl border border-emerald-200/50 dark:border-emerald-800/50 hover:shadow-lg transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">🎯 Taxa de Conversão</p>
-                <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100 mt-1">{taxaConversao}%</p>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                  {stats.fechado} fechados de {stats.total} leads
-                </p>
-              </div>
-              <div className="p-3 bg-emerald-500 rounded-xl">
-                <Target className="h-8 w-8 text-white" />
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/30 p-4 lg:p-6 rounded-xl border border-emerald-200/50 dark:border-emerald-800/50 hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-semibold text-emerald-700 dark:text-emerald-300">🎯 Taxa de Conversão</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-emerald-900 dark:text-emerald-100 mt-1">{taxaConversao}%</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    {stats.fechado} fechados de {stats.total} leads
+                  </p>
+                </div>
+                <div className="p-2 lg:p-3 bg-emerald-500 rounded-xl flex-shrink-0 ml-3">
+                  <Target className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 p-6 rounded-2xl border border-blue-200/50 dark:border-blue-800/50 hover:shadow-lg transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">💰 Receita Total</p>
-                <p className="text-3xl font-bold text-blue-900 dark:text-blue-100 mt-1">
-                  R$ {(valorTotalVendas / 1000000).toFixed(1)}M
-                </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  Vendas fechadas
-                </p>
-              </div>
-              <div className="p-3 bg-blue-500 rounded-xl">
-                <DollarSign className="h-8 w-8 text-white" />
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 p-4 lg:p-6 rounded-xl border border-blue-200/50 dark:border-blue-800/50 hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-semibold text-blue-700 dark:text-blue-300">💰 Receita Total</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-blue-900 dark:text-blue-100 mt-1">
+                    R$ {(valorTotalVendas / 1000000).toFixed(1)}M
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Vendas fechadas
+                  </p>
+                </div>
+                <div className="p-2 lg:p-3 bg-blue-500 rounded-xl flex-shrink-0 ml-3">
+                  <DollarSign className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/30 p-6 rounded-2xl border border-amber-200/50 dark:border-amber-800/50 hover:shadow-lg transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">🚀 Leads Ativos</p>
-                <p className="text-3xl font-bold text-amber-900 dark:text-amber-100 mt-1">{leadsAtivos}</p>
-                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
-                  Em processo de venda
-                </p>
-              </div>
-              <div className="p-3 bg-amber-500 rounded-xl">
-                <Activity className="h-8 w-8 text-white" />
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/30 p-4 lg:p-6 rounded-xl border border-amber-200/50 dark:border-amber-800/50 hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-semibold text-amber-700 dark:text-amber-300">🚀 Leads Ativos</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-amber-900 dark:text-amber-100 mt-1">{leadsAtivos}</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                    Em processo de venda
+                  </p>
+                </div>
+                <div className="p-2 lg:p-3 bg-amber-500 rounded-xl flex-shrink-0 ml-3">
+                  <Activity className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
+                </div>
               </div>
             </div>
-          </div>
         </div>
 
-        {/* Métricas Gerenciais */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/50 dark:border-blue-800/50">
-              <div>
-                <CardTitle className="text-xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-500 rounded-lg">
-                    <Building2 className="h-4 w-4 text-white" />
-                  </div>
-                  Performance da Equipe
-                </CardTitle>
-                <CardDescription className="text-blue-600 dark:text-blue-400 mt-1">
-                  🏢 Métricas de produtividade e resultados
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
+          {/* Métricas Gerenciais */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+            <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/50 dark:border-blue-800/50">
+                <div>
+                  <CardTitle className="text-lg lg:text-xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                    <div className="p-1.5 bg-blue-500 rounded-lg">
+                      <Building2 className="h-4 w-4 text-white" />
+                    </div>
+                    Performance da Equipe
+                  </CardTitle>
+                  <CardDescription className="text-blue-600 dark:text-blue-400 mt-1 text-sm">
+                    🏢 Métricas de produtividade e resultados
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 lg:p-6">
               <div className="space-y-4">
                 <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50">
                   <div className="flex items-center justify-between mb-2">
@@ -409,45 +445,7 @@ export default function GerenteRelatorios() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-green-200/50 dark:border-green-800/50">
-              <div>
-                <CardTitle className="text-xl font-bold text-green-800 dark:text-green-200 flex items-center gap-2">
-                  <div className="p-1.5 bg-green-500 rounded-lg">
-                    <MessageSquare className="h-4 w-4 text-white" />
-                  </div>
-                  Status do WhatsApp
-                </CardTitle>
-                <CardDescription className="text-green-600 dark:text-green-400 mt-1">
-                  💬 Integração e comunicação automatizada
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl border border-green-200/50 dark:border-green-800/50">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-green-800 dark:text-green-200">Status</span>
-                    <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
-                      ✅ Conectado
-                    </span>
-                  </div>
-                </div>
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-50 dark:from-blue-950/20 dark:to-blue-950/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-blue-800 dark:text-blue-200">Mensagens Enviadas</span>
-                    <span className="font-bold text-lg text-blue-900 dark:text-blue-100">1,234</span>
-                  </div>
-                </div>
-                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-50 dark:from-purple-950/20 dark:to-purple-950/20 rounded-xl border border-purple-200/50 dark:border-purple-800/50">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-purple-800 dark:text-purple-200">Taxa de Resposta</span>
-                    <span className="font-bold text-lg text-purple-900 dark:text-purple-100">85%</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Seção WhatsApp movida para a página dedicada de WhatsApp */}
 
           <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
             <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-b border-amber-200/50 dark:border-amber-800/50">
@@ -488,24 +486,24 @@ export default function GerenteRelatorios() {
           </Card>
         </div>
 
-        {/* Gráficos Detalhados */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Gráficos Detalhados */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
           {/* Leads por Status */}
-          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border-b border-violet-200/50 dark:border-violet-800/50">
-              <div>
-                <CardTitle className="text-xl font-bold text-violet-800 dark:text-violet-200 flex items-center gap-2">
-                  <div className="p-1.5 bg-violet-500 rounded-lg">
-                    <Target className="h-4 w-4 text-white" />
-                  </div>
-                  Distribuição por Status
-                </CardTitle>
-                <CardDescription className="text-violet-600 dark:text-violet-400 mt-1">
-                  📊 Análise detalhada do pipeline de vendas
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
+            <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border-b border-violet-200/50 dark:border-violet-800/50">
+                <div>
+                  <CardTitle className="text-lg lg:text-xl font-bold text-violet-800 dark:text-violet-200 flex items-center gap-2">
+                    <div className="p-1.5 bg-violet-500 rounded-lg">
+                      <Target className="h-4 w-4 text-white" />
+                    </div>
+                    Distribuição por Status
+                  </CardTitle>
+                  <CardDescription className="text-violet-600 dark:text-violet-400 mt-1 text-sm">
+                    📊 Análise detalhada do pipeline de vendas
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 lg:p-6">
               <div className="space-y-4">
                 {Object.entries(leadsPorStatus).map(([status, quantidade]) => {
                   const porcentagem = leads.length > 0 ? ((quantidade / leads.length) * 100).toFixed(1) : '0';
@@ -594,25 +592,25 @@ export default function GerenteRelatorios() {
           </Card>
         </div>
 
-        {/* Resumo Executivo e Insights Estratégicos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Resumo Executivo e Insights Estratégicos */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
           {/* Resumo Executivo */}
-          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-b border-purple-200/50 dark:border-purple-800/50">
-              <div>
-                <CardTitle className="text-xl font-bold text-purple-800 dark:text-purple-200 flex items-center gap-2">
-                  <div className="p-1.5 bg-purple-500 rounded-lg">
-                    <Award className="h-4 w-4 text-white" />
-                  </div>
-                  Resumo Executivo
-                </CardTitle>
-                <CardDescription className="text-purple-600 dark:text-purple-400 mt-1">
-                  🏆 Análise estratégica para tomada de decisões
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-b border-purple-200/50 dark:border-purple-800/50">
+                <div>
+                  <CardTitle className="text-lg lg:text-xl font-bold text-purple-800 dark:text-purple-200 flex items-center gap-2">
+                    <div className="p-1.5 bg-purple-500 rounded-lg">
+                      <Award className="h-4 w-4 text-white" />
+                    </div>
+                    Resumo Executivo
+                  </CardTitle>
+                  <CardDescription className="text-purple-600 dark:text-purple-400 mt-1 text-sm">
+                    🏆 Análise estratégica para tomada de decisões
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 lg:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                 <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl border border-green-200/50 dark:border-green-800/50">
                   <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
                   <h3 className="font-semibold text-green-800 dark:text-green-200">Crescimento</h3>
@@ -715,6 +713,7 @@ export default function GerenteRelatorios() {
               </div>
             </CardContent>
           </Card>
+        </div>
         </div>
       </div>
     </AppLayout>

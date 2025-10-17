@@ -87,39 +87,72 @@ export default function Relatorios() {
   const ticketMedio = stats.fechado > 0 ? valorTotalVendas / stats.fechado : 0;
 
   const exportarRelatorio = () => {
-    const dados = {
-      periodo: `${periodo} dias`,
-      totalLeads: leadsFiltrados.length,
-      leadsPorStatus,
-      valorTotalVendas,
-      taxaConversao,
-      leadsPorMes,
-      metricasCorretor: {
-        metaMensal,
-        progressoMeta: `${progressoMeta.toFixed(1)}%`,
-        valorTotalPipeline,
-        ticketMedio,
-        leadsAtivos,
-        leadsInteressados,
-        leadsVisitas,
-        leadsPropostas
-      }
-    };
-    
-    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `relatorio-corretor-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      // Gerar CSV formatado
+      let csv = '📊 RELATÓRIO DO CORRETOR - SUPABASE DEALS\n\n';
+      csv += `Data de Geração: ${new Date().toLocaleString('pt-BR')}\n`;
+      csv += `Período: Últimos ${periodo} dias\n\n`;
+      
+      // Métricas Principais
+      csv += '=== MINHA PERFORMANCE ===\n';
+      csv += `Total de Leads,${totalLeads}\n`;
+      csv += `Leads Fechados,${leadsFechados}\n`;
+      csv += `Leads Ativos,${leadsAtivos}\n`;
+      csv += `Taxa de Conversão,${taxaConversao}%\n`;
+      csv += `Valor Total Vendido,R$ ${valorTotalVendas.toLocaleString('pt-BR')}\n`;
+      csv += `Ticket Médio,R$ ${ticketMedio.toLocaleString('pt-BR')}\n`;
+      csv += `Valor Pipeline,R$ ${valorTotalPipeline.toLocaleString('pt-BR')}\n\n`;
+      
+      // Meta Mensal
+      csv += '=== PERFORMANCE VS META ===\n';
+      csv += `Meta Mensal,${metaMensal} leads\n`;
+      csv += `Realizado (Período),${leadsPeriodo.length} leads\n`;
+      csv += `Progresso Meta,${progressoMeta.toFixed(1)}%\n\n`;
+      
+      // Leads por Status
+      csv += '=== MEUS LEADS POR STATUS ===\n';
+      Object.entries(leadsPorStatus).forEach(([status, count]) => {
+        csv += `${status},${count}\n`;
+      });
+      csv += '\n';
+      
+      // Evolução Mensal
+      csv += '=== EVOLUÇÃO MENSAL ===\n';
+      Object.entries(leadsPorMes).forEach(([mes, count]) => {
+        csv += `${mes},${count}\n`;
+      });
+      csv += '\n';
+      
+      // Lista de Leads
+      csv += '=== MEUS LEADS DO PERÍODO ===\n';
+      csv += 'Nome,Status,Valor,Data\n';
+      leadsFiltrados.forEach(lead => {
+        csv += `${lead.nome},${lead.status},R$ ${(lead.valor_interesse || 0).toLocaleString('pt-BR')},${new Date(lead.created_at).toLocaleDateString('pt-BR')}\n`;
+      });
+      
+      // Download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-corretor-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    toast({
-      title: "Relatório Exportado",
-      description: `Relatório dos últimos ${periodo} dias exportado com sucesso`,
-    });
+      toast({
+        title: "Relatório Exportado",
+        description: `Relatório CSV dos últimos ${periodo} dias com ${leadsFiltrados.length} leads`,
+      });
+    } catch (error) {
+      console.error('Erro ao exportar relatório:', error);
+      toast({
+        title: "Erro na Exportação",
+        description: "Não foi possível exportar o relatório.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewLeads = () => {

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './auth-context';
-import { useUserRoles } from '@/hooks/use-user-roles';
+import { useUnifiedAuth } from '@/contexts/unified-auth-context';
+import { useUnifiedRoles } from '@/hooks/use-unified-roles';
 
 interface SearchContextType {
   searchTerm: string;
@@ -15,8 +15,8 @@ const SearchContext = createContext<SearchContextType | undefined>(undefined);
 export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { isGerente } = useUserRoles();
+  const { user } = useUnifiedAuth();
+  const { isManager: isGerente } = useUnifiedRoles();
 
   const performGlobalSearch = useCallback(() => {
     if (!searchTerm.trim() || !user) return;
@@ -53,6 +53,11 @@ export function useSearch() {
   }
   return context;
 }
+
+
+
+
+
 
 
 

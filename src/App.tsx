@@ -1,101 +1,81 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/auth-context";
-import { SearchProvider } from "@/contexts/search-context";
-import { ProtectedRoute } from "@/components/layout/protected-route";
-import { AppLayout } from "@/components/layout/app-layout";
-import { ErrorBoundary } from "@/components/error-boundary";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Auth from "./pages/auth";
-import Login from "./pages/login";
-import CorretorDashboard from "./pages/corretor-dashboard";
-import GerenteDashboard from "./pages/gerente-dashboard";
-import GerenteWhatsAppPage from "./pages/gerente-whatsapp-final";
-import Leads from "./pages/leads";
-import Kanban from "./pages/kanban";
-import Relatorios from "./pages/relatorios";
-import GerenteRelatorios from "./pages/gerente-relatorios";
-import GerenteEquipe from "./pages/gerente-equipe";
-import TodosLeads from "./pages/todos-leads";
+/**
+ * 🚀 URBAN CRM - Application Root
+ *
+ * Aplicação principal com providers e rotas otimizadas
+ * Design modular e fácil manutenção
+ *
+ * @version 2.0.0
+ */
 
-const queryClient = new QueryClient();
+import { Suspense } from 'react';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route, useRoutes } from 'react-router-dom';
+import { UnifiedAuthProvider } from '@/contexts/unified-auth-context';
+import { SearchProvider } from '@/contexts/search-context';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { GlobalLoading } from '@/components/global-loading';
+import { routes } from '@/config/route-config';
+import { ConsoleHelper } from '@/components/dev/console-helper';
+import { AuthMiddleware } from '@/components/layout/auth-middleware';
+
+// ============================================================================
+// QUERY CLIENT CONFIGURATION
+// ============================================================================
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minuto
+      refetchOnWindowFocus: false, // Evita requisições desnecessárias
+      retry: 1, // Apenas 1 retry
+    },
+  },
+});
+
+// ============================================================================
+// APP ROUTES COMPONENT
+// ============================================================================
+
+function AppRoutes() {
+  const routing = useRoutes(routes);
+  return (
+    <AuthMiddleware requireAuth={false}>
+      {routing}
+    </AuthMiddleware>
+  );
+}
+
+// ============================================================================
+// MAIN APP COMPONENT
+// ============================================================================
 
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <UnifiedAuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
             <SearchProvider>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute allowedRoles={['corretor']}>
-                <CorretorDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/corretor" element={
-              <ProtectedRoute allowedRoles={['corretor']}>
-                <CorretorDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/leads" element={
-              <ProtectedRoute allowedRoles={['corretor']}>
-                <Leads />
-              </ProtectedRoute>
-            } />
-            <Route path="/todos-leads" element={
-              <ProtectedRoute allowedRoles={['gerente']}>
-                <TodosLeads />
-              </ProtectedRoute>
-            } />
-            <Route path="/kanban" element={
-              <ProtectedRoute allowedRoles={['corretor', 'gerente']}>
-                <Kanban />
-              </ProtectedRoute>
-            } />
-            <Route path="/relatorios" element={
-              <ProtectedRoute allowedRoles={['corretor']}>
-                <Relatorios />
-              </ProtectedRoute>
-            } />
-            <Route path="/gerente" element={
-              <ProtectedRoute allowedRoles={['gerente']}>
-                <GerenteDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/gerente-whatsapp" element={
-              <ProtectedRoute allowedRoles={['gerente']}>
-                <AppLayout>
-                  <GerenteWhatsAppPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/gerente/relatorios" element={
-              <ProtectedRoute allowedRoles={['gerente']}>
-                <GerenteRelatorios />
-              </ProtectedRoute>
-            } />
-            <Route path="/gerente/equipe" element={
-              <ProtectedRoute allowedRoles={['gerente']}>
-                <GerenteEquipe />
-              </ProtectedRoute>
-            } />
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Console Helper para desenvolvimento */}
+              <ConsoleHelper />
+              {/* Suspense para lazy loading */}
+              <Suspense fallback={<GlobalLoading message='Carregando...' />}>
+                <AppRoutes />
+              </Suspense>
             </SearchProvider>
-        </BrowserRouter>
           </TooltipProvider>
-      </AuthProvider>
+        </UnifiedAuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   </ErrorBoundary>
 );

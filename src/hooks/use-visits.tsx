@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/auth-context';
+import { useUnifiedAuth } from '@/contexts/unified-auth-context';
 import { toast } from 'sonner';
 
 export interface Visit {
@@ -19,7 +19,7 @@ export interface Visit {
 export const useVisits = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useUnifiedAuth();
 
   const fetchVisits = async () => {
     if (!user) return;
@@ -49,21 +49,25 @@ export const useVisits = () => {
     }
   };
 
-  const createVisit = async (visitData: Omit<Visit, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const createVisit = async (
+    visitData: Omit<Visit, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+  ) => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('visits')
-        .insert([{
-          ...visitData,
-          user_id: user.id,
-        }])
+        .insert([
+          {
+            ...visitData,
+            user_id: user.id,
+          },
+        ])
         .select()
         .single();
 
       if (error) throw error;
-      
+
       toast.success('Visita agendada com sucesso!');
       return data;
     } catch (error) {
@@ -83,7 +87,7 @@ export const useVisits = () => {
         .single();
 
       if (error) throw error;
-      
+
       toast.success('Visita atualizada com sucesso!');
       return data;
     } catch (error) {
@@ -95,13 +99,10 @@ export const useVisits = () => {
 
   const deleteVisit = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('visits')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('visits').delete().eq('id', id);
 
       if (error) throw error;
-      
+
       toast.success('Visita cancelada com sucesso!');
     } catch (error) {
       console.error('Erro ao cancelar visita:', error);
@@ -114,25 +115,14 @@ export const useVisits = () => {
     if (user) {
       fetchVisits();
 
-      // Set up realtime subscription
-      const channel = supabase
-        .channel('visits-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'visits',
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            fetchVisits();
-          }
-        )
-        .subscribe();
+      // ✅ DESATIVADO: Realtime removido, usando polling
+      // Polling a cada 60s (opcional)
+      const pollingInterval = setInterval(() => {
+        fetchVisits();
+      }, 60000);
 
       return () => {
-        supabase.removeChannel(channel);
+        clearInterval(pollingInterval);
       };
     }
   }, [user]);
