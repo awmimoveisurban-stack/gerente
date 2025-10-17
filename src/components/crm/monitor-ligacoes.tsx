@@ -95,17 +95,10 @@ export function MonitorLigacoes({
           startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       }
 
-      // Buscar dados de ligações dos corretores
+      // Buscar dados de ligações dos corretores (sem join)
       const { data: ligacoesData, error } = await supabase
         .from('lead_interactions')
-        .select(
-          `
-          user_id,
-          tipo,
-          created_at,
-          profiles(nome, email)
-        `
-        )
+        .select('user_id, tipo, created_at')
         .eq('tipo', 'ligacao_realizada')
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false });
@@ -114,16 +107,35 @@ export function MonitorLigacoes({
         throw error;
       }
 
+      // Buscar dados dos profiles separadamente
+      const userIds = [...new Set(ligacoesData?.map(l => l.user_id) || [])];
+      let profilesData: any[] = [];
+      
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, nome, email')
+          .in('id', userIds);
+        
+        if (!profilesError) {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Criar mapa de profiles para lookup rápido
+      const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+
       // Processar dados para estatísticas
       const statsMap = new Map<string, LigacaoStats>();
 
       ligacoesData?.forEach(ligacao => {
         const userId = ligacao.user_id;
+        const profile = profilesMap.get(userId);
 
         if (!statsMap.has(userId)) {
           statsMap.set(userId, {
             corretor_id: userId,
-            corretor_nome: ligacao.profiles?.nome || ligacao.profiles?.email || 'Usuário',
+            corretor_nome: profile?.nome || profile?.email || 'Usuário',
             total_leads: 0,
             ligacoes_realizadas: 0,
             ligacoes_respondidas: 0,
