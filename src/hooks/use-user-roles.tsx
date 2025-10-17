@@ -222,55 +222,14 @@ export const useUserRoles = () => {
               user.email
             );
           } else {
-            // Tentar buscar do banco com timeout reduzido
-            const timeout = new Promise(
-              (_, reject) =>
-                setTimeout(() => reject(new Error('Timeout')), 1000) // Reduzido para 1s
-            );
-
-            const query = supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', user.id);
-
-            try {
-              const { data, error } = (await Promise.race([
-                query,
-                timeout,
-              ])) as any;
-
-              if (!error && data && data.length > 0) {
-                fetchedRoles = data.map((r: any) => r.role);
-                console.log(
-                  '✅ [ROLES] Roles encontrados no banco:',
-                  fetchedRoles
-                );
-              } else {
-                console.log(
-                  '⚠️ [ROLES] Nenhum role encontrado no banco para:',
-                  user.email
-                );
-                // ✅ FIX: Usar role do usuário offline se não encontrar no banco
-                if (user.cargo) {
-                  fetchedRoles = [user.cargo as AppRole];
-                  console.log('🔧 [ROLES] Usando cargo do usuário offline:', user.cargo);
-                } else {
-                  fetchedRoles = ['corretor']; // Padrão seguro
-                  console.log('🔧 [ROLES] Usando fallback: corretor');
-                }
-              }
-            } catch (dbError) {
-              console.log(
-                '⚠️ [ROLES] Timeout/erro ao buscar no banco, usando fallback'
-              );
-              // ✅ FIX: Usar role do usuário offline se não conseguir acessar o banco
-              if (user.cargo) {
-                fetchedRoles = [user.cargo as AppRole];
-                console.log('🔧 [ROLES] Usando cargo do usuário offline (erro banco):', user.cargo);
-              } else {
-                fetchedRoles = ['corretor']; // Padrão seguro
-                console.log('🔧 [ROLES] Usando fallback (erro banco): corretor');
-              }
+            // ✅ SIMPLIFICADO: Usar apenas role do usuário offline
+            console.log('🔧 [ROLES] Usando sistema offline, cargo do usuário:', user.cargo);
+            if (user.cargo) {
+              fetchedRoles = [user.cargo as AppRole];
+              console.log('✅ [ROLES] Role definido pelo usuário offline:', user.cargo);
+            } else {
+              fetchedRoles = ['corretor']; // Padrão seguro
+              console.log('🔧 [ROLES] Usando fallback: corretor');
             }
           }
 

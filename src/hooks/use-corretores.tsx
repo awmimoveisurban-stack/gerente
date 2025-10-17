@@ -20,69 +20,31 @@ export const useCorretores = () => {
       setLoading(true);
       logger.info('🔍 Buscando lista de corretores...');
 
-      // Buscar corretores através de user_roles
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(
-          `
-          user_id,
-          profiles(
-            email,
-            nome,
-            ativo
-          )
-        `
-        )
-        .eq('role', 'corretor');
+      // Buscar corretores diretamente da tabela profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('email, nome, ativo, cargo')
+        .eq('cargo', 'corretor');
 
-      if (rolesError) {
+      if (profilesError) {
         logger.error(
-          '❌ Erro ao buscar corretores via user_roles:',
-          rolesError
+          '❌ Erro ao buscar corretores via profiles:',
+          profilesError
         );
-
-        // Fallback: buscar diretamente da tabela profiles
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('email, nome, ativo')
-          .eq('cargo', 'corretor');
-
-        if (profilesError) {
-          logger.error(
-            '❌ Erro ao buscar corretores via profiles:',
-            profilesError
-          );
-          setCorretores([]);
-          return;
-        }
-
-        const corretoresFromProfiles = (profilesData || []).map(profile => ({
-          user_id: profile.email, // Usar email como ID temporário
-          email: profile.email,
-          nome: profile.nome || profile.email,
-          ativo: profile.ativo !== false,
-        }));
-
-        setCorretores(corretoresFromProfiles);
-        logger.info(
-          `✅ ${corretoresFromProfiles.length} corretores encontrados via profiles`
-        );
+        setCorretores([]);
         return;
       }
 
-      // Processar dados de user_roles
-      const corretoresFromRoles = (rolesData || [])
-        .map(role => ({
-          user_id: role.user_id,
-          email: role.profiles.email,
-          nome: role.profiles.nome || role.profiles.email,
-          ativo: role.profiles.ativo !== false,
-        }))
-        .filter(corretor => corretor.email && corretor.nome); // Filtrar dados inválidos
+      const corretoresFromProfiles = (profilesData || []).map(profile => ({
+        user_id: profile.email, // Usar email como ID temporário
+        email: profile.email,
+        nome: profile.nome || profile.email,
+        ativo: profile.ativo !== false,
+      }));
 
-      setCorretores(corretoresFromRoles);
+      setCorretores(corretoresFromProfiles);
       logger.info(
-        `✅ ${corretoresFromRoles.length} corretores encontrados via user_roles`
+        `✅ ${corretoresFromProfiles.length} corretores encontrados via profiles`
       );
     } catch (error) {
       logger.error('❌ Erro inesperado ao buscar corretores:', error);
