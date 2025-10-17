@@ -368,18 +368,19 @@ export function MonitorLigacoes({
 
             {/* Tabela Detalhada */}
             <div className='border rounded-lg overflow-hidden'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Corretor</TableHead>
-                    <TableHead>Total Leads</TableHead>
-                    <TableHead>Ligações Realizadas</TableHead>
-                    <TableHead>Taxa de Resposta</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Última Ligação</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
+              <div className='overflow-x-auto'>
+                <Table className='min-w-full'>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className='min-w-[120px]'>Corretor</TableHead>
+                      <TableHead className='min-w-[80px] hidden sm:table-cell'>Total Leads</TableHead>
+                      <TableHead className='min-w-[100px]'>Ligações</TableHead>
+                      <TableHead className='min-w-[120px] hidden md:table-cell'>Taxa de Resposta</TableHead>
+                      <TableHead className='min-w-[80px]'>Status</TableHead>
+                      <TableHead className='min-w-[100px] hidden lg:table-cell'>Última Ligação</TableHead>
+                      <TableHead className='min-w-[100px]'>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   <AnimatePresence>
                     {stats.map((stat, index) => (
@@ -392,20 +393,20 @@ export function MonitorLigacoes({
                         className='hover:bg-gray-50 dark:hover:bg-gray-800/50'
                       >
                         <TableCell>
-                          <div className='flex items-center gap-3'>
-                            <Avatar className='h-8 w-8'>
-                              <AvatarFallback className='bg-blue-500 text-white text-sm'>
+                          <div className='flex items-center gap-2 sm:gap-3'>
+                            <Avatar className='h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0'>
+                              <AvatarFallback className='bg-blue-500 text-white text-xs sm:text-sm'>
                                 {getInitials(stat.corretor_nome)}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
-                              <p className='font-medium text-gray-900 dark:text-white'>
+                            <div className='min-w-0'>
+                              <p className='font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate'>
                                 {stat.corretor_nome}
                               </p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className='hidden sm:table-cell'>
                           <span className='font-semibold text-gray-900 dark:text-white'>
                             {stat.total_leads}
                           </span>
@@ -415,13 +416,13 @@ export function MonitorLigacoes({
                             {stat.ligacoes_realizadas}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className='hidden md:table-cell'>
                           <div className='flex items-center gap-2'>
                             <Progress
                               value={stat.taxa_resposta}
-                              className='w-20 h-2'
+                              className='w-16 sm:w-20 h-2'
                             />
-                            <span className='text-sm font-medium'>
+                            <span className='text-xs sm:text-sm font-medium'>
                               {Math.round(stat.taxa_resposta)}%
                             </span>
                           </div>
@@ -429,10 +430,10 @@ export function MonitorLigacoes({
                         <TableCell>
                           {getStatusBadge(stat.taxa_resposta)}
                         </TableCell>
-                        <TableCell>
-                          <div className='flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400'>
-                            <Clock className='h-3 w-3' />
-                            {new Date(stat.ultima_ligacao).toLocaleDateString()}
+                        <TableCell className='hidden lg:table-cell'>
+                          <div className='flex items-center gap-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
+                            <Clock className='h-3 w-3 flex-shrink-0' />
+                            <span className='truncate'>{new Date(stat.ultima_ligacao).toLocaleDateString()}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -441,7 +442,7 @@ export function MonitorLigacoes({
                             variant='outline'
                             onClick={() => registrarLigacao(stat.corretor_id)}
                             disabled={registrandoLigacao === stat.corretor_id}
-                            className='bg-green-50 hover:bg-green-100 text-green-700 border-green-200'
+                            className='text-xs sm:text-sm bg-green-50 hover:bg-green-100 text-green-700 border-green-200'
                           >
                             {registrandoLigacao === stat.corretor_id ? (
                               <>
@@ -461,6 +462,7 @@ export function MonitorLigacoes({
                   </AnimatePresence>
                 </TableBody>
               </Table>
+              </div>
             </div>
           </div>
         )}

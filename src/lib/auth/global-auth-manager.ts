@@ -109,7 +109,7 @@ export const useGlobalAuthStore = create<AuthState>()(
 
           // Simular autenticação (substituir por lógica real)
           const mockUser: GlobalUser = {
-            id: credentials.email === 'cursos360.click@gmail.com' ? 'gerente-fixed-id' : 'corretor-fixed-id',
+            id: credentials.email === 'cursos360.click@gmail.com' ? '550e8400-e29b-41d4-a716-446655440000' : '550e8400-e29b-41d4-a716-446655440001',
             email: credentials.email,
             nome: credentials.email === 'cursos360.click@gmail.com' ? 'Admin Gerente' : 'Usuário Teste',
             cargo: credentials.email === 'cursos360.click@gmail.com' ? 'gerente' : 'corretor',
@@ -336,9 +336,20 @@ export const useGlobalAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         lastSync: state.lastSync,
       }),
-      version: 1,
+      version: 2,
       migrate: (persistedState: any, version: number) => {
         console.log('🔄 [GLOBAL-AUTH] Migrando estado:', { version, persistedState });
+        
+        // ✅ MIGRAÇÃO: Limpar IDs antigos inválidos
+        if (persistedState?.user?.id && 
+            (persistedState.user.id === 'gerente-fixed-id' || 
+             persistedState.user.id === 'corretor-fixed-id' ||
+             persistedState.user.id === 'offline-gerente-fixed-id' ||
+             persistedState.user.id === 'offline-corretor-fixed-id')) {
+          console.log('🧹 [GLOBAL-AUTH] Removendo ID antigo inválido:', persistedState.user.id);
+          return null; // Força recriação com ID válido
+        }
+        
         return persistedState;
       },
     }

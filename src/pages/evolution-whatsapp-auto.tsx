@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import {
   Card,
@@ -24,447 +24,367 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useEvolutionDirect } from '@/hooks/use-evolution-direct';
+import { useWhatsAppStatus } from '@/hooks/use-whatsapp-status';
+import { useEvolutionPollingDireto } from '@/hooks/use-evolution-polling-direto';
 
 export default function EvolutionWhatsAppAuto() {
   const { toast } = useToast();
   
-  // Estados locais simplificados
-  const [status, setStatus] = useState<'disconnected' | 'pending' | 'authorized'>('disconnected');
-  const [isCreating, setIsCreating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState(120);
-  const [instance, setInstance] = useState<{ instanceName: string } | null>(null);
+  // ✅ Hooks reais do sistema
+  const { createInstance, deleteInstance, isCreating, isDeleting, qrCode, timeRemaining } = useEvolutionDirect();
+  const { whatsappStatus, isLoading, refreshStatus } = useWhatsAppStatus();
+  
+  // ✅ Ativar polling quando conectado
+  useEvolutionPollingDireto(whatsappStatus.status === 'authorized');
+  
+  // Estados locais para UI
+  const [showQR, setShowQR] = useState(false);
+
+  // ✅ DEBUG: Log do status atual
+  console.log('🔍 DEBUG WhatsApp Status:', {
+    status: whatsappStatus.status,
+    isOnline: whatsappStatus.isOnline,
+    instanceName: whatsappStatus.instanceName,
+    isLoading,
+  });
 
   const handleConnect = useCallback(async () => {
-    setIsCreating(true);
     try {
-      // Simular criação de instância
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setStatus('pending');
-      
-      // QR Code real do WhatsApp (simulado)
-      const qrCodeData = `data:image/svg+xml;base64,${btoa(`
-        <svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
-          <rect width="256" height="256" fill="white"/>
-          <rect x="20" y="20" width="216" height="216" fill="none" stroke="black" stroke-width="2"/>
-          <rect x="40" y="40" width="40" height="40" fill="black"/>
-          <rect x="100" y="40" width="40" height="40" fill="black"/>
-          <rect x="160" y="40" width="40" height="40" fill="black"/>
-          <rect x="220" y="40" width="16" height="40" fill="black"/>
-          <rect x="40" y="100" width="40" height="40" fill="black"/>
-          <rect x="100" y="100" width="40" height="40" fill="white"/>
-          <rect x="160" y="100" width="40" height="40" fill="black"/>
-          <rect x="40" y="160" width="40" height="40" fill="black"/>
-          <rect x="100" y="160" width="40" height="40" fill="black"/>
-          <rect x="160" y="160" width="40" height="40" fill="black"/>
-          <rect x="220" y="160" width="16" height="40" fill="black"/>
-          <rect x="40" y="220" width="40" height="16" fill="black"/>
-          <rect x="100" y="220" width="40" height="16" fill="black"/>
-          <rect x="160" y="220" width="40" height="16" fill="black"/>
-          <text x="128" y="280" text-anchor="middle" font-family="Arial" font-size="12" fill="black">WhatsApp QR Code</text>
-        </svg>
-      `)}`;
-      
-      setQrCode(qrCodeData);
-      
-      // Simular countdown e conexão automática
-      let count = 120;
-      const interval = setInterval(() => {
-        count -= 1;
-        setTimeRemaining(count);
-        
-        // Simular conexão automática após 5 segundos (para demo)
-        if (count === 115) {
-          clearInterval(interval);
-          setStatus('authorized');
-          setInstance({ instanceName: 'whatsapp-instance-' + Date.now() });
-          setQrCode(null);
-          toast({
-            title: "WhatsApp Conectado!",
-            description: "Seu WhatsApp foi conectado com sucesso",
-          });
-          return;
-        }
-        
-        if (count <= 0) {
-          clearInterval(interval);
-          setStatus('disconnected');
-          setQrCode(null);
-          toast({
-            title: "QR Code Expirado",
-            description: "O QR Code expirou. Tente conectar novamente",
-            variant: "destructive",
-          });
-        }
-      }, 1000);
-      
+      await createInstance();
+      setShowQR(true);
       toast({
-        title: "QR Code Gerado",
-        description: "Escaneie o QR Code com seu WhatsApp",
+        title: 'Instância criada com sucesso!',
+        description: 'Escaneie o QR Code para conectar o WhatsApp',
       });
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Falha ao gerar QR Code",
-        variant: "destructive",
+        title: 'Erro ao criar instância',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
       });
-    } finally {
-      setIsCreating(false);
     }
-  }, [toast]);
+  }, [createInstance, toast]);
 
   const handleDisconnect = useCallback(async () => {
-    const confirmed = confirm(
-      '⚠️ Tem certeza que deseja desconectar?\n\n' +
-        'Isso irá:\n' +
-        '• Desconectar seu WhatsApp\n' +
-        '• Deletar a instância do servidor\n' +
-        '• Parar de receber/enviar mensagens\n\n' +
-        'Para reconectar, você precisará escanear um novo QR Code.'
-    );
-
-    if (!confirmed) return;
-
-    setIsDeleting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setStatus('disconnected');
-      setQrCode(null);
-      setInstance(null);
-      setTimeRemaining(120);
-      
+      await deleteInstance();
+      setShowQR(false);
       toast({
-        title: "WhatsApp Desconectado",
-        description: "A instância foi removida com sucesso",
+        title: 'WhatsApp desconectado com sucesso!',
       });
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Falha ao desconectar",
-        variant: "destructive",
+        title: 'Erro ao desconectar',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
       });
-    } finally {
-      setIsDeleting(false);
     }
-  }, [toast]);
+  }, [deleteInstance, toast]);
 
-  const handleRefreshStatus = useCallback(() => {
-    toast({
-      title: "Status Atualizado",
-      description: "Verificando conexão do WhatsApp...",
-    });
-  }, [toast]);
+  // Mostrar QR quando disponível
+  useEffect(() => {
+    if (qrCode) {
+      setShowQR(true);
+    }
+  }, [qrCode]);
+
+  // Esconder QR quando conectado
+  useEffect(() => {
+    if (whatsappStatus.status === 'authorized') {
+      setShowQR(false);
+    }
+  }, [whatsappStatus.status]);
+
+  const getStatusBadge = () => {
+    switch (whatsappStatus.status) {
+      case 'authorized':
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300 dark:border-green-700">✅ Conectado</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700">⏳ Aguardando</Badge>;
+      case 'disconnected':
+      default:
+        return <Badge variant="secondary" className="border-gray-300 dark:border-gray-700">❌ Desconectado</Badge>;
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (whatsappStatus.status) {
+      case 'authorized':
+        return <CheckCircle className="h-6 w-6 text-green-600 animate-pulse" />;
+      case 'pending':
+        return <RefreshCw className="h-6 w-6 text-yellow-600 animate-spin" />;
+      case 'disconnected':
+      default:
+        return <PhoneOff className="h-6 w-6 text-gray-400" />;
+    }
+  };
 
   return (
     <AppLayout>
-      <div className="">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
-          <div className="px-0 py-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500 rounded-xl">
-                  <MessageSquare className="h-5 w-5 text-white" />
-                </div>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
         <div>
-                  <h1 className="text-xl lg:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            WhatsApp Evolution API
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              WhatsApp Business
           </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
-                    📱 Conecte seu WhatsApp e receba leads automaticamente
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Conecte seu WhatsApp e receba leads automaticamente
           </p>
         </div>
-              </div>
-        <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefreshStatus}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Atualizar Status</span>
-                <span className="sm:hidden">Atualizar</span>
-        </Button>
-      </div>
+          <div className="flex items-center gap-3">
+            {getStatusIcon()}
+            {getStatusBadge()}
           </div>
         </div>
-
-        {/* Main Content */}
-        <div className="space-y-6">
 
       {/* Alert Info */}
           <Alert className="bg-blue-50/80 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/50">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800 dark:text-blue-200">
-          <strong>⚡ Tempo Real com Socket.IO:</strong> Mensagens serão
+            <strong>⚡ Tempo Real:</strong> Mensagens serão
           recebidas instantaneamente (0-3s) e qualificadas pela Claude AI
           automaticamente!
         </AlertDescription>
       </Alert>
 
-          {/* Status WhatsApp */}
-          <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-green-200/50 dark:border-green-800/50">
-              <CardTitle className="flex items-center gap-2 text-lg lg:text-xl">
-                <div className="p-1.5 bg-green-500 rounded-lg">
-                  <Smartphone className="w-4 h-4 text-white" />
-                </div>
-                Status do WhatsApp
+        {/* Status Card */}
+        <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/50 dark:border-blue-800/50">
+            <CardTitle className="text-xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+              <Smartphone className="h-5 w-5" />
+              Status da Conexão
               </CardTitle>
-              <CardDescription className="text-green-600 dark:text-green-400 mt-1 text-sm">
-                📱 Monitoramento da conexão WhatsApp
+            <CardDescription className="text-blue-600 dark:text-blue-400">
+              Gerencie sua conexão com o WhatsApp Business
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    status === 'authorized' ? 'bg-green-500' : 
-                    status === 'pending' ? 'bg-yellow-500' : 
-                    'bg-red-500'
-                  }`}></div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {status === 'authorized' ? 'Conectado' : 
-                     status === 'pending' ? 'Aguardando QR Code' : 
-                     'Desconectado'}
-                  </span>
-                </div>
-                <Badge variant={status === 'authorized' ? 'default' : 'secondary'} 
-                       className={status === 'authorized' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}>
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  {status === 'authorized' ? 'Online' : 'Offline'}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-      {/* Status Desconectado */}
-      {status === 'disconnected' && (
-          <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
-          <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg lg:text-xl">
-                <Smartphone className="w-5 h-5 lg:w-6 lg:h-6" />
-              Conectar WhatsApp
-            </CardTitle>
-              <CardDescription className="text-sm">
-              Conecte seu WhatsApp Business para começar a receber leads
-              automaticamente
-            </CardDescription>
-          </CardHeader>
-            <CardContent className="space-y-4">
-            <Button
-              onClick={handleConnect}
-              disabled={isCreating}
-                className="w-full"
-                size="lg"
-            >
-              {isCreating ? (
-                <>
-                    <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                  Gerando QR Code...
-                </>
-              ) : (
-                <>
-                    <Phone className="w-5 h-5 mr-2" />
-                  Conectar WhatsApp
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* QR Code */}
-      {status === 'pending' && qrCode && (
-          <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/50 dark:border-blue-800/50">
-              <CardTitle className="flex items-center gap-2 text-lg lg:text-xl">
-                <div className="p-1.5 bg-blue-500 rounded-lg">
-                  <QrCode className="w-4 h-4 text-white" />
-                </div>
-              Escanear QR Code
-            </CardTitle>
-              <CardDescription className="text-blue-600 dark:text-blue-400 mt-1 text-sm">
-                📱 Use o aplicativo WhatsApp para escanear o QR Code abaixo
-            </CardDescription>
-          </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-6 p-6 lg:p-8">
-              {/* QR Code Container */}
-              <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700">
-                {qrCode && (
-                  <img 
-                    src={qrCode} 
-                    alt="WhatsApp QR Code" 
-                    className="w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80"
-                    onError={(e) => {
-                      console.error('Erro ao carregar QR Code:', e);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                )}
-            </div>
-
-              {/* Timer */}
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    ⏱️ Tempo restante:
-                  </p>
-                </div>
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                O QR Code expira em 2 minutos
-              </p>
-            </div>
-
-              {/* Instructions */}
-              <Alert className="bg-amber-50/90 dark:bg-amber-950/30 border-amber-200/60 dark:border-amber-800/60 max-w-md">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-800 dark:text-amber-200">
-                  <strong className="block mb-2">Como escanear:</strong>
-                  <ol className="list-decimal ml-4 space-y-1 text-sm">
-                  <li>Abra o WhatsApp no seu celular</li>
-                  <li>Toque em "Configurações" ou "⋮"</li>
-                  <li>Toque em "Aparelhos conectados"</li>
-                  <li>Toque em "Conectar um aparelho"</li>
-                  <li>Aponte a câmera para este QR Code</li>
-                </ol>
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Conectado */}
-      {status === 'authorized' && instance && (
-          <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-green-200/50 dark:border-green-800/50">
-              <CardTitle className="flex items-center gap-2 text-lg lg:text-xl">
-                <div className="p-1.5 bg-green-500 rounded-lg">
-                  <CheckCircle className="w-4 h-4 text-white" />
-                </div>
-              WhatsApp Conectado
-            </CardTitle>
-              <CardDescription className="text-green-600 dark:text-green-400 mt-1 text-sm">
-                🎉 Seu WhatsApp está conectado e pronto para receber leads
-            </CardDescription>
-          </CardHeader>
-            <CardContent className="space-y-6 p-6 lg:p-8">
+          <CardContent className="p-6">
+            <div className="space-y-6">
               {/* Status Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Instância:</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border">
-                    <p className="font-mono text-sm text-gray-900 dark:text-gray-100">
-                      {instance.instanceName || 'whatsapp-instance-001'}
+              <div className={`flex items-center justify-between p-4 rounded-lg ${
+                whatsappStatus.status === 'authorized' 
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
+                  : 'bg-gray-50 dark:bg-gray-700/50'
+              }`}>
+                <div className="flex items-center gap-3">
+                  {getStatusIcon()}
+                  <div>
+                    <p className={`font-semibold ${
+                      whatsappStatus.status === 'authorized' 
+                        ? 'text-green-800 dark:text-green-200' 
+                        : 'text-gray-900 dark:text-white'
+                    }`}>
+                      {whatsappStatus.status === 'authorized' ? '✅ WhatsApp Conectado' : 
+                       whatsappStatus.status === 'pending' ? '⏳ Aguardando Conexão' : 
+                       '❌ WhatsApp Desconectado'}
                     </p>
+                    <p className={`text-sm ${
+                      whatsappStatus.status === 'authorized' 
+                        ? 'text-green-700 dark:text-green-300' 
+                        : 'text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {whatsappStatus.status === 'authorized' ? '🎉 WhatsApp está ativo e recebendo mensagens automaticamente!' :
+                       whatsappStatus.status === 'pending' ? '📱 Escaneie o QR Code para conectar' :
+                       '🔌 Clique em conectar para iniciar a integração'}
+                    </p>
+                    {whatsappStatus.status === 'authorized' && whatsappStatus.instanceName && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        Instância: {whatsappStatus.instanceName}
+                      </p>
+                    )}
                   </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshStatus}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </Button>
+                </div>
               </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</p>
+              {/* QR Code Section */}
+              {showQR && qrCode && (
+                <div className="text-center space-y-4">
+                  <div className="bg-white p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 inline-block">
+                    <img 
+                      src={qrCode} 
+                      alt="QR Code WhatsApp" 
+                      className="w-64 h-64 mx-auto"
+                    />
                   </div>
-                  <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white px-3 py-1">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Conectado e Ativo
-                </Badge>
+                  <div className="space-y-2">
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      Escaneie o QR Code com seu WhatsApp
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Abra o WhatsApp no seu celular e escaneie este código
+                    </p>
+                    {timeRemaining > 0 && (
+                      <p className="text-sm text-orange-600 dark:text-orange-400">
+                        QR Code expira em: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+                     {/* Action Buttons */}
+                     <div className="space-y-4">
+                
+                {whatsappStatus.status === 'authorized' ? (
+                  // ✅ WHATSAPP CONECTADO - Mostrar botão desconectar destacado
+                  <div className="text-center space-y-3">
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <p className="text-green-800 dark:text-green-200 font-semibold mb-2">
+                        🎉 WhatsApp está conectado e funcionando!
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300 mb-3">
+                        Suas mensagens estão sendo recebidas e qualificadas automaticamente pela IA.
+                      </p>
+                      <Button
+                        onClick={handleDisconnect}
+                        disabled={isDeleting}
+                        variant="destructive"
+                        size="lg"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        {isDeleting ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Desconectando...
+                          </>
+                        ) : (
+                          <>
+                            <PhoneOff className="h-4 w-4 mr-2" />
+                            Desconectar WhatsApp
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // ❌ WHATSAPP DESCONECTADO - Mostrar botão conectar
+                  <div className="text-center space-y-3">
+                    <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <p className="text-gray-800 dark:text-gray-200 font-semibold mb-2">
+                        {whatsappStatus.status === 'pending' ? '⏳ Aguardando conexão...' : '🔌 WhatsApp desconectado'}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        {whatsappStatus.status === 'pending' 
+                          ? 'Escaneie o QR Code acima para conectar' 
+                          : 'Clique no botão abaixo para iniciar a integração'}
+                      </p>
+                      <Button
+                        onClick={handleConnect}
+                        disabled={isCreating}
+                        size="lg"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {isCreating ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Conectando...
+                          </>
+                        ) : (
+                          <>
+                            <Phone className="h-4 w-4 mr-2" />
+                            Conectar WhatsApp
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
 
               {/* Success Alert */}
-              <Alert className="bg-green-50/90 dark:bg-green-950/30 border-green-200/60 dark:border-green-800/60">
-                <Zap className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800 dark:text-green-200">
-                <strong>⚡ WebSocket Ativo:</strong> Mensagens serão recebidas e
-                qualificadas pela IA em tempo real (2-3s)!
-              </AlertDescription>
-            </Alert>
-
-              {/* Disconnect Button */}
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              onClick={handleDisconnect}
-              disabled={isDeleting}
-                  variant="destructive"
-                  className="w-full h-12"
-            >
-              {isDeleting ? (
-                <>
-                      <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                  Desconectando...
-                </>
-              ) : (
-                <>
-                      <PhoneOff className="w-5 h-5 mr-2" />
-                  Desconectar WhatsApp
-                </>
+              {whatsappStatus.status === 'authorized' && (
+                <Alert className="bg-green-50/90 dark:bg-green-950/30 border-green-200/60 dark:border-green-800/60">
+                  <Zap className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800 dark:text-green-200">
+                    <strong>⚡ Sistema Ativo:</strong> Mensagens serão recebidas e
+                    qualificadas pela IA em tempo real (2-3s)!
+                  </AlertDescription>
+                </Alert>
               )}
-            </Button>
               </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Informações */}
-        <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-200">
+        {/* Features Card */}
+        <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
         <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg lg:text-xl">
-              <Shield className="w-5 h-5" />
-            Como Funciona
+            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Recursos Ativos
           </CardTitle>
+            <CardDescription>
+              Funcionalidades disponíveis quando conectado
+            </CardDescription>
         </CardHeader>
-          <CardContent className="space-y-4 p-4 lg:p-6">
-            <div className="space-y-3 text-sm">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="bg-primary/10 p-2 rounded-full">
                   <Zap className="w-4 h-4 text-primary" />
               </div>
               <div>
-                  <p className="font-semibold">Tempo Real com Socket.IO</p>
+                    <p className="font-semibold">Tempo Real</p>
                   <p className="text-muted-foreground">
-                  Mensagens são recebidas instantaneamente (0-3s) via WebSocket
+                      Mensagens são recebidas instantaneamente (0-3s) via polling
                 </p>
               </div>
             </div>
 
               <div className="flex items-start gap-3">
                 <div className="bg-primary/10 p-2 rounded-full">
-                  <span className="text-lg">🤖</span>
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">IA Claude</p>
+                    <p className="text-muted-foreground">
+                      Qualificação automática de leads com análise inteligente
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <CheckCircle className="w-4 h-4 text-primary" />
               </div>
               <div>
-                  <p className="font-semibold">Qualificação Automática com IA</p>
+                    <p className="font-semibold">Integração Completa</p>
                   <p className="text-muted-foreground">
-                  Claude AI analisa cada mensagem e extrai: tipo de imóvel,
-                  localização, orçamento, prioridade
+                      Leads são automaticamente salvos no sistema CRM
                 </p>
               </div>
             </div>
 
               <div className="flex items-start gap-3">
                 <div className="bg-primary/10 p-2 rounded-full">
-                  <CheckCircle className="w-4 h-4 text-primary" />
+                    <AlertCircle className="w-4 h-4 text-primary" />
               </div>
               <div>
-                  <p className="font-semibold">Leads Pré-Qualificados</p>
+                    <p className="font-semibold">Notificações</p>
                   <p className="text-muted-foreground">
-                  Leads são criados automaticamente com score 0-100 e prioridade
-                  calculada
+                      Alertas em tempo real para novos leads recebidos
                 </p>
-              </div>
+                  </div>
+                </div>
             </div>
           </div>
         </CardContent>
       </Card>
-    </div>
       </div>
     </AppLayout>
   );

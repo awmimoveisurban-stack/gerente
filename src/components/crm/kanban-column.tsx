@@ -44,7 +44,7 @@ export function KanbanColumn({
 
   return (
     <Card
-      className={`flex flex-col h-full transition-all duration-200 ${bgColor} ${isOver ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`}
+      className={`flex flex-col h-full transition-all duration-200 ${bgColor} ${isOver ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'} [scroll-snap-align:start] min-w-[260px] sm:min-w-0`}
     >
       <CardHeader className='pb-3 border-b border-white/20 dark:border-gray-700/20'>
         <div className='flex items-center justify-between'>

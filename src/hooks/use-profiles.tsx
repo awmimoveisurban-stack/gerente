@@ -88,37 +88,44 @@ export function useProfiles() {
         // Gerar ID único para o profile
         const profileId = crypto.randomUUID();
 
-        // ✅ Criar profile diretamente na tabela profiles
+        // ✅ Criar profile diretamente na tabela profiles (enviar apenas colunas existentes)
+        const insertPayload: any = {
+          id: profileId,
+          email: email,
+          full_name: nome,
+          nome: nome,
+          login_nome: loginNome,
+          senha: senha, // ⚠️ Em produção, usar hash
+          cargo: profileData.cargo || 'corretor',
+          ativo: true,
+          created_at: new Date().toISOString(),
+        };
+
+        // ✅ Incluir telefone se fornecido
+        if (profileData.telefone) {
+          insertPayload.telefone = profileData.telefone;
+        }
+
         const { data: newProfile, error: profileError } = await supabase
           .from('profiles')
-          .insert([
-            {
-              id: profileId,
-              email: email,
-              full_name: nome,
-              nome: nome,
-              login_nome: loginNome,
-              senha: senha, // ✅ Senha será armazenada (em produção, usar hash)
-              cargo: profileData.cargo || 'corretor',
-              telefone: profileData.telefone || '',
-              ativo: true,
-              created_at: new Date().toISOString(),
-            } as any,
-          ])
+          .insert([insertPayload])
           .select()
           .single();
 
         if (profileError) throw profileError;
 
-        // ✅ Vincular role diretamente
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert([{ 
-            user_id: profileId, 
-            role: profileData.cargo || 'corretor' 
-          }]);
-
-        if (roleError) throw roleError;
+        // ✅ Vincular role diretamente (ignorar se tabela não existir)
+        try {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert([{ 
+              user_id: profileId, 
+              role: profileData.cargo || 'corretor' 
+            }]);
+          if (roleError) console.warn('user_roles não disponível:', roleError);
+        } catch (e) {
+          console.warn('Ignorando vinculação de role (user_roles ausente).');
+        }
 
         toast({
           title: '✅ Membro Adicionado',
@@ -147,6 +154,7 @@ export function useProfiles() {
           .from('profiles')
           .update({
             full_name: updates.nome || updates.full_name,
+            telefone: updates.telefone,
             // Adicione outros campos conforme necessário
           })
           .eq('id', id);

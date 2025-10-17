@@ -46,6 +46,10 @@ export const useWhatsAppStatus = () => {
     useCallback(async (): Promise<WhatsAppConfig | null> => {
       if (!user) return null;
 
+      // ✅ DEBUG: Log do user ID sendo usado
+      console.log('🔍 DEBUG fetchWhatsAppConfig - User ID:', user.id);
+      console.log('🔍 DEBUG fetchWhatsAppConfig - User completo:', user);
+
       try {
         const { data, error } = await supabase
           .from('whatsapp_config')
@@ -53,21 +57,87 @@ export const useWhatsAppStatus = () => {
           .eq('manager_id', user.id)
           .eq('provider', 'evolution-api')
           .is('deleted_at', null)
-          .maybeSingle();
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        const config = data?.[0]; // Pegar o primeiro (mais recente)
 
         if (error) {
           logger.error('Erro ao buscar config WhatsApp', {
             error: error.message,
+            userId: user.id,
           });
           return null;
         }
 
-        return data;
+        // ✅ Verificar se a instância ainda existe na Evolution API
+        if (config && config.evolution_instance_name) {
+          const instanceExists = await checkInstanceExists(config.evolution_instance_name);
+          if (!instanceExists) {
+            logger.warn('Instância não existe mais na Evolution API, marcando como deletada', {
+              instanceName: config.evolution_instance_name
+            });
+            await cleanupOrphanedInstance(config.evolution_instance_name);
+            return null;
+          }
+        }
+
+        return config;
       } catch (err) {
         logger.error('Erro inesperado ao buscar config', { error: err });
         return null;
       }
     }, [user]);
+
+  // Verificar se instância existe na Evolution API
+  const checkInstanceExists = useCallback(
+    async (instanceName: string): Promise<boolean> => {
+      try {
+        const response = await fetch(
+          `https://api.urbanautobot.com/instance/connectionState/${instanceName}`,
+          {
+            method: 'GET',
+            headers: {
+              apikey: 'cfd9b746ea9e400dc8f4d3e8d57b0180',
+            },
+          }
+        );
+
+        return response.ok;
+      } catch (err) {
+        logger.error('Erro ao verificar se instância existe', { error: err });
+        return false;
+      }
+    },
+    []
+  );
+
+  // Limpar instância órfã do banco
+  const cleanupOrphanedInstance = useCallback(
+    async (instanceName: string) => {
+      try {
+        logger.info('Limpando instância órfã do banco', { instanceName });
+        
+        const { error } = await supabase
+          .from('whatsapp_config')
+          .update({
+            status: 'disconnected',
+            deleted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('evolution_instance_name', instanceName);
+
+        if (error) {
+          logger.error('Erro ao limpar instância órfã', { error });
+        } else {
+          logger.info('✅ Instância órfã limpa do banco');
+        }
+      } catch (err) {
+        logger.error('Erro ao limpar instância órfã', { error: err });
+      }
+    },
+    []
+  );
 
   // Verificar status na Evolution API
   const checkEvolutionAPIStatus = useCallback(
@@ -84,6 +154,16 @@ export const useWhatsAppStatus = () => {
         );
 
         if (!response.ok) {
+          if (response.status === 404) {
+            logger.warn('Instância não encontrada na Evolution API', { instanceName });
+            // ✅ Limpar instância órfã do banco
+            await cleanupOrphanedInstance(instanceName);
+            return false;
+          }
+          logger.warn('Erro ao verificar status Evolution API', { 
+            status: response.status,
+            instanceName 
+          });
           return false;
         }
 
@@ -91,7 +171,28 @@ export const useWhatsAppStatus = () => {
         const isConnected =
           data.state === 'open' ||
           data.state === 'CONNECTED' ||
-          data.state === 'connected';
+          data.state === 'connected' ||
+          data.state === 'OPEN' ||
+          data.state === 'ready' ||
+          data.state === 'READY' ||
+          data.instance?.state === 'open' ||
+          data.instance?.state === 'CONNECTED' ||
+          data.instance?.state === 'connected' ||
+          data.instance?.state === 'OPEN' ||
+          data.instance?.state === 'ready' ||
+          data.instance?.state === 'READY';
+
+        // ✅ LOG DETALHADO DA RESPOSTA DA API
+        logger.info('🔍 Evolution API Status Check:', {
+          instanceName,
+          responseStatus: response.status,
+          apiData: data,
+          isConnected,
+          detectedStates: {
+            mainState: data.state,
+            instanceState: data.instance?.state,
+          },
+        });
 
         return isConnected;
       } catch (err) {
@@ -180,7 +281,64 @@ export const useWhatsAppStatus = () => {
         // QR Code expirado ou instância perdida
         currentStatus = 'disconnected';
         await updateStatusInDatabase(config, 'disconnected', false);
+      } else if (isOnline && config.status !== 'authorized') {
+        // ✅ WhatsApp está conectado mas status no banco não está atualizado
+        logger.info('WhatsApp conectado mas status não atualizado no banco', {
+          currentStatus: config.status,
+          isOnline: true,
+        });
+        currentStatus = 'authorized';
+        await updateStatusInDatabase(config, 'authorized', true);
+      } else if (!isOnline && config.status === 'disconnected' && config.evolution_instance_name) {
+        // ✅ FALLBACK: Se tem instância mas está desconectado, tentar verificar novamente
+        logger.info('Fallback: Tentando verificar status novamente', {
+          instanceName: config.evolution_instance_name,
+          currentStatus: config.status,
+        });
+        
+        // Tentar verificar status novamente com timeout menor
+        try {
+          const fallbackCheck = await fetch(
+            `https://api.urbanautobot.com/instance/connectionState/${config.evolution_instance_name}`,
+            {
+              method: 'GET',
+              headers: { apikey: 'cfd9b746ea9e400dc8f4d3e8d57b0180' },
+              signal: AbortSignal.timeout(5000), // 5s timeout
+            }
+          );
+          
+          if (fallbackCheck.ok) {
+            const fallbackData = await fallbackCheck.json();
+            const fallbackConnected = 
+              fallbackData.state === 'open' ||
+              fallbackData.state === 'CONNECTED' ||
+              fallbackData.state === 'connected' ||
+              fallbackData.state === 'OPEN' ||
+              fallbackData.state === 'ready' ||
+              fallbackData.state === 'READY';
+              
+            if (fallbackConnected) {
+              logger.info('Fallback detectou conexão!', {
+                instanceName: config.evolution_instance_name,
+                fallbackState: fallbackData.state,
+              });
+              currentStatus = 'authorized';
+              await updateStatusInDatabase(config, 'authorized', true);
+            }
+          }
+        } catch (fallbackError) {
+          logger.warn('Fallback check falhou', { error: fallbackError });
+        }
       }
+
+      // ✅ LOG DETALHADO PARA DEBUG
+      logger.info('🔍 Status WhatsApp determinado:', {
+        configStatus: config.status,
+        isOnline,
+        currentStatus,
+        instanceName: config.evolution_instance_name,
+        managerId: user.id,
+      });
 
       setWhatsappStatus({
         status: currentStatus,

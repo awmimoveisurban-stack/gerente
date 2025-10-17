@@ -142,6 +142,16 @@ export default function LeadsV2() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [showFilters, setShowFilters] = useState(false);
+  // Mobile-only view preference
+  const [mobileViewMode, setMobileViewMode] = useState<'cards' | 'table'>('cards');
+  useEffect(() => {
+    const saved = localStorage.getItem('leads-v2-mobile-view');
+    if (saved === 'cards' || saved === 'table') setMobileViewMode(saved);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('leads-v2-mobile-view', mobileViewMode);
+  }, [mobileViewMode]);
 
   // Handle global search from header
   useEffect(() => {
@@ -695,12 +705,20 @@ export default function LeadsV2() {
               <CardTitle className='flex items-center gap-2'>
                 <Filter className='h-5 w-5 text-purple-600' />
                 Filtros e Busca
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='ml-auto sm:hidden'
+                  onClick={() => setShowFilters(v => !v)}
+                >
+                  {showFilters ? 'Ocultar' : 'Mostrar'}
+                </Button>
               </CardTitle>
               <CardDescription>
                 Encontre os leads que você precisa
               </CardDescription>
             </CardHeader>
-            <CardContent className='p-6'>
+            <CardContent className={`p-6 ${showFilters ? 'block' : 'hidden'} sm:block`}>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
                 {/* Busca */}
                 <div className='relative'>
@@ -798,6 +816,16 @@ export default function LeadsV2() {
               <CardTitle className='flex items-center gap-2'>
                 <Users className='h-5 w-5 text-indigo-600' />
                 Meus Leads
+                {/* Toggle mobile cards/table */}
+                <div className='ml-auto sm:hidden'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setMobileViewMode(mobileViewMode === 'cards' ? 'table' : 'cards')}
+                  >
+                    {mobileViewMode === 'cards' ? 'Ver Tabela' : 'Ver Cards'}
+                  </Button>
+                </div>
               </CardTitle>
               <CardDescription>
                 {filteredLeads.length} leads encontrados
@@ -838,8 +866,9 @@ export default function LeadsV2() {
                   </Button>
                 </div>
               ) : viewMode === 'list' ? (
-                <div className='overflow-x-auto'>
-                  <Table>
+                <>
+                <div className={`overflow-x-auto ${mobileViewMode === 'table' ? 'block' : 'hidden'} sm:block`}>
+                  <Table className='min-w-full'>
                     <TableHeader>
                       <TableRow className='hover:bg-transparent'>
                         <TableHead
@@ -1091,6 +1120,60 @@ export default function LeadsV2() {
                     </TableBody>
                   </Table>
                 </div>
+                {/* mobile cards */}
+                <div className={`${mobileViewMode === 'cards' ? 'block' : 'hidden'} sm:hidden p-4 space-y-3`}>
+                  {filteredLeads.map((lead, index) => (
+                    <Card key={lead.id} className='border border-indigo-100 dark:border-indigo-900'>
+                      <CardContent className='p-4'>
+                        <div className='flex items-start justify-between gap-3'>
+                          <div className='flex items-center gap-3 min-w-0'>
+                            <div className='w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm shrink-0'>
+                              {lead.nome?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            <div className='min-w-0'>
+                              <p className='font-semibold text-gray-900 dark:text-white truncate text-sm'>{lead.nome}</p>
+                              <div className='flex items-center gap-2 mt-1 text-[11px] text-gray-500 dark:text-gray-400'>
+                                {(lead as any).interesse && (
+                                  <span className='truncate'>🏠 {(lead as any).interesse}</span>
+                                )}
+                                {lead.valor_imovel && (
+                                  <span className='truncate'>• R$ {lead.valor_imovel.toLocaleString('pt-BR')}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <StatusBadge status={lead.status as any} />
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-[12px] text-gray-600 dark:text-gray-300'>
+                          {lead.telefone && (
+                            <span className='flex items-center gap-1 truncate'><Phone className='h-3 w-3' />{lead.telefone}</span>
+                          )}
+                          {lead.email && (
+                            <span className='flex items-center gap-1 truncate'><Mail className='h-3 w-3' />{lead.email}</span>
+                          )}
+                        </div>
+                        <div className='mt-3 flex items-center justify-end gap-2'>
+                          <Button variant='outline' size='sm' className='h-8 px-2' onClick={() => setShowDetailsModal(true) || setSelectedLead(lead)}>
+                            <Eye className='h-3 w-3 mr-1' /> Detalhes
+                          </Button>
+                          <Button variant='outline' size='sm' className='h-8 px-2' onClick={() => setShowCallModal(true) || setSelectedLead(lead)}>
+                            <Phone className='h-3 w-3 mr-1' /> Ligar
+                          </Button>
+                          <Button variant='outline' size='sm' className='h-8 px-2' onClick={() => setShowEmailModal(true) || setSelectedLead(lead)}>
+                            <Mail className='h-3 w-3 mr-1' /> Email
+                          </Button>
+                          <Button variant='outline' size='sm' className='h-8 px-2' onClick={() => setShowVisitModal(true) || setSelectedLead(lead)}>
+                            <Calendar className='h-3 w-3 mr-1' /> Visita
+                          </Button>
+                          <Button variant='outline' size='sm' className='h-8 px-2' onClick={() => setShowEditModal(true) || setSelectedLead(lead)}>
+                            <Edit className='h-3 w-3 mr-1' /> Editar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                </>
               ) : (
                 /* Grid View */
                 <div className='p-6'>

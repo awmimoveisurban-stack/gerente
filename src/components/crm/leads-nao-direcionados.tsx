@@ -200,48 +200,48 @@ export function LeadsNaoDirecionados({
                     : 'border-gray-200 bg-gray-50 dark:bg-gray-700/50'
                 }`}
               >
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-4'>
-                    <Avatar className='h-12 w-12'>
+                <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
+                  <div className='flex items-start sm:items-center gap-3 sm:gap-4 min-w-0'>
+                    <Avatar className='h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0'>
                       <AvatarFallback className='bg-blue-500 text-white'>
                         {getInitials(lead.nome || 'Lead')}
                       </AvatarFallback>
                     </Avatar>
 
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-2 mb-1'>
-                        <h4 className='font-semibold text-gray-900 dark:text-white'>
+                    <div className='flex-1 min-w-0'>
+                      <div className='flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1'>
+                        <h4 className='font-semibold text-gray-900 dark:text-white truncate'>
                           {lead.nome || 'Nome não informado'}
                         </h4>
                         {isProximoAutoAssign(lead.created_at) && (
-                          <Badge variant='destructive' className='text-xs'>
+                          <Badge variant='destructive' className='text-xs flex-shrink-0'>
                             <Timer className='h-3 w-3 mr-1' />
                             Urgente
                           </Badge>
                         )}
                       </div>
 
-                      <div className='flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400'>
+                      <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
                         <div className='flex items-center gap-1'>
-                          <Phone className='h-3 w-3' />
-                          {lead.telefone}
+                          <Phone className='h-3 w-3 flex-shrink-0' />
+                          <span className='truncate'>{lead.telefone}</span>
                         </div>
                         <div className='flex items-center gap-1'>
-                          <Clock className='h-3 w-3' />
-                          {getTempoCriacao(lead.created_at)}
+                          <Clock className='h-3 w-3 flex-shrink-0' />
+                          <span className='truncate'>{getTempoCriacao(lead.created_at)}</span>
                         </div>
                         {lead.score_ia && (
                           <div className='flex items-center gap-1'>
-                            <Target className='h-3 w-3' />
-                            Score: {lead.score_ia}
+                            <Target className='h-3 w-3 flex-shrink-0' />
+                            <span className='truncate'>Score: {lead.score_ia}</span>
                           </div>
                         )}
                       </div>
 
                       {lead.observacoes && (
-                        <div className='flex items-center gap-1 mt-1 text-xs text-gray-500 dark:text-gray-400'>
-                          <MessageSquare className='h-3 w-3' />
-                          {lead.observacoes.substring(0, 100)}...
+                        <div className='flex items-start gap-1 mt-1 text-xs text-gray-500 dark:text-gray-400'>
+                          <MessageSquare className='h-3 w-3 flex-shrink-0 mt-0.5' />
+                          <span className='line-clamp-2'>{lead.observacoes.substring(0, 100)}...</span>
                         </div>
                       )}
                     </div>

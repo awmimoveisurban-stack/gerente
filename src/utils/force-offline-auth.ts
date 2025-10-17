@@ -54,8 +54,8 @@ export const forceOfflineAuth = {
   generateOfflineUser(email: string) {
     const isGerente = email.toLowerCase() === 'cursos360.click@gmail.com';
     
-    // IDs fixos para garantir consistência
-    const fixedId = isGerente ? 'offline-gerente-fixed-id' : 'offline-corretor-fixed-id';
+    // IDs fixos para garantir consistência (UUIDs válidos)
+    const fixedId = isGerente ? '550e8400-e29b-41d4-a716-446655440000' : '550e8400-e29b-41d4-a716-446655440001';
     
     const user = {
       id: fixedId,

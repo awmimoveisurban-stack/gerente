@@ -33,12 +33,15 @@ export function useEvolutionSend() {
       });
 
       // 1. Buscar configuração Evolution API do manager
-      const { data: config, error: configError } = await supabase
+      const { data, error: configError } = await supabase
         .from('whatsapp_config')
         .select('evolution_instance_name, evolution_instance_token, status')
         .eq('manager_id', user.id)
         .in('status', ['connected', 'authorized']) // ✅ Aceitar ambos status
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      const config = data?.[0]; // Pegar o primeiro (mais recente)
 
       if (configError) {
         logger.error('Erro ao buscar config Evolution', { error: configError });

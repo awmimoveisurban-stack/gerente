@@ -11,7 +11,7 @@ export const FEATURES = {
   // Notificações (polling desabilitado por padrão)
   NOTIFICATIONS_POLLING: false,
 
-  // Realtime (WebSocket)
+  // Realtime (Polling)
   REALTIME_ENABLED: false,
 
   // Analytics

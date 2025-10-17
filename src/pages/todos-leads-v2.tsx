@@ -11,6 +11,7 @@ import { MonitorLigacoes } from '@/components/crm/monitor-ligacoes';
 import { LeadDetailsModal } from '@/components/crm/lead-details-modal';
 import { WhatsAppMessageModal } from '@/components/crm/whatsapp-message-modal';
 import { EditLeadModal } from '@/components/crm/edit-lead-modal';
+import { LeadCardCompact } from '@/components/crm/lead-card-compact';
 import { AddLeadModal } from '@/components/crm/add-lead-modal';
 import { usePagination } from '@/hooks/use-pagination';
 import {
@@ -148,6 +149,7 @@ export default function TodosLeadsV2() {
   const [sortBy, setSortBy] = useState('score_ia');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   
   // Estados para modais
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -158,6 +160,30 @@ export default function TodosLeadsV2() {
   const [periodoMonitor, setPeriodoMonitor] = useState<
     'hoje' | 'semana' | 'mes'
   >('hoje');
+  // Mobile UX states
+  const [showFilters, setShowFilters] = useState(false);
+  const [mobileViewMode, setMobileViewMode] = useState<'cards' | 'table'>('cards');
+
+  // Persist view mode on mobile
+  useEffect(() => {
+    const saved = localStorage.getItem('todos-leads-mobile-view');
+    if (saved === 'cards' || saved === 'table') setMobileViewMode(saved);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('todos-leads-mobile-view', mobileViewMode);
+  }, [mobileViewMode]);
+
+  // Forçar modo "cards" em telas pequenas e ajustar ao redimensionar
+  useEffect(() => {
+    const enforceMobileCards = () => {
+      if (window.innerWidth < 640) {
+        setMobileViewMode('cards');
+      }
+    };
+    enforceMobileCards();
+    window.addEventListener('resize', enforceMobileCards);
+    return () => window.removeEventListener('resize', enforceMobileCards);
+  }, []);
 
   // Leads filtrados com ordenação
   const filteredLeads = useMemo(() => {
@@ -310,6 +336,45 @@ export default function TodosLeadsV2() {
     });
   }, [toast]);
 
+  const handleCall = useCallback((lead: Lead) => {
+    if (!lead.telefone) {
+      toast({
+        title: '⚠️ Telefone não disponível',
+        description: 'Este lead não possui número de telefone cadastrado.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      window.open(`tel:${lead.telefone}`);
+    } catch {
+      toast({ title: 'Não foi possível iniciar a ligação.' });
+    }
+  }, [toast]);
+
+  const handleEmail = useCallback((lead: Lead) => {
+    if (!lead.email) {
+      toast({
+        title: '⚠️ Email não disponível',
+        description: 'Este lead não possui email cadastrado.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      window.location.href = `mailto:${lead.email}?subject=Contato%20sobre%20seu%20interesse`;
+    } catch {
+      toast({ title: 'Não foi possível abrir o cliente de email.' });
+    }
+  }, [toast]);
+
+  const handleScheduleVisit = useCallback((lead: Lead) => {
+    toast({
+      title: '📅 Agendamento',
+      description: 'Funcionalidade de agendar visita em breve.',
+    });
+  }, [toast]);
+
   const handleWhatsAppContact = useCallback((lead: Lead) => {
     if (!lead.telefone) {
       toast({
@@ -376,46 +441,48 @@ export default function TodosLeadsV2() {
     trend?: { value: number; label: string };
     onClick?: () => void;
   }) => (
-    <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} className='relative h-full'>
+    <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} className='relative h-full group'>
       <Card
         className={`cursor-pointer transition-all duration-300 hover:shadow-xl border-2 h-full ${onClick ? 'hover:border-opacity-80' : 'border-opacity-50'}`}
         style={{ borderColor: color }}
         onClick={onClick}
       >
-        <CardContent className='p-6 h-full'>
-          <div className='flex items-center justify-between'>
-            <div className='flex-1'>
-              <p className='text-sm font-medium text-gray-600 dark:text-gray-400 mb-1'>
+        <CardContent className='p-3 sm:p-4 lg:p-6 h-full'>
+          <div className='flex items-center justify-between gap-2'>
+            <div className='flex-1 min-w-0'>
+              <p className='text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 truncate'>
                 {title}
               </p>
-              <p className='text-3xl font-bold text-gray-900 dark:text-white'>
+              <p className='text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white'>
                 {value}
               </p>
               {subtitle && (
-                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1 truncate'>
                   {subtitle}
                 </p>
               )}
               {trend && (
-                <div className='flex items-center mt-2'>
+                <div className='flex items-center mt-1 sm:mt-2'>
                   {trend.value > 0 ? (
-                    <TrendingUp className='h-3 w-3 text-green-500 mr-1' />
+                    <TrendingUp className='h-3 w-3 text-green-500 mr-1 flex-shrink-0' />
                   ) : (
-                    <TrendingDown className='h-3 w-3 text-red-500 mr-1' />
+                    <TrendingDown className='h-3 w-3 text-red-500 mr-1 flex-shrink-0' />
                   )}
                   <span
-                    className={`text-xs ${trend.value > 0 ? 'text-green-600' : 'text-red-600'}`}
+                    className={`text-xs ${trend.value > 0 ? 'text-green-600' : 'text-red-600'} truncate`}
                   >
                     {Math.abs(trend.value)}% {trend.label}
                   </span>
                 </div>
               )}
             </div>
-            <div
-              className='p-3 rounded-xl'
-              style={{ backgroundColor: color + '20' }}
-            >
-              <Icon className='h-8 w-8' style={{ color }} />
+            <div className='flex-shrink-0 ml-1 sm:ml-2'>
+              <div
+                className='w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110'
+                style={{ backgroundColor: color }}
+              >
+                <Icon className='h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white' />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -426,15 +493,15 @@ export default function TodosLeadsV2() {
   return (
     <ManagerRoute>
       <AppLayout>
-      <div className='space-y-8'>
+      <div className='space-y-8 min-w-0'>
         {/* 🎯 HEADER MODERNO */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className='bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-3xl p-8 border border-blue-200/50 dark:border-gray-700/50 shadow-lg'
         >
-          <div className='flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6'>
-            <div>
+          <div className='flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 min-w-0'>
+            <div className='min-w-0'>
               <h1 className='text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent'>
                 Gestão de Leads
               </h1>
@@ -493,7 +560,7 @@ export default function TodosLeadsV2() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch'
+          className='grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 items-stretch'
         >
           <MetricCard
             title='Total de Leads'
@@ -532,7 +599,9 @@ export default function TodosLeadsV2() {
         </motion.div>
 
         {/* 🚨 LEADS NÃO DIREcionados */}
+        {true && (
         <motion.div
+          className='overflow-x-auto min-w-0'
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -543,9 +612,12 @@ export default function TodosLeadsV2() {
             onLeadAtribuido={refetch}
           />
         </motion.div>
+        )}
 
         {/* 📞 MONITOR DE LIGAÇÕES */}
+        {true && (
         <motion.div
+          className='overflow-x-auto min-w-0'
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
@@ -555,10 +627,12 @@ export default function TodosLeadsV2() {
             onPeriodoChange={setPeriodoMonitor}
           />
         </motion.div>
+        )}
 
         {/* ✅ OTIMIZAÇÃO: Gráficos removidos para melhor performance */}
 
         {/* 🔍 FILTROS AVANÇADOS */}
+        {true && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -569,13 +643,32 @@ export default function TodosLeadsV2() {
               <CardTitle className='flex items-center gap-2'>
                 <Filter className='h-5 w-5 text-purple-600' />
                 Filtros e Ordenação
+                <span className='sr-only'>Filtros</span>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='ml-auto sm:hidden'
+                  onClick={() => setShowFilters(v => !v)}
+                >
+                  {showFilters ? 'Ocultar' : 'Mostrar'}
+                </Button>
+                {/* Toggle de visualização apenas no mobile */}
+                <div className='ml-2 sm:hidden'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setMobileViewMode(mobileViewMode === 'cards' ? 'table' : 'cards')}
+                  >
+                    {mobileViewMode === 'cards' ? 'Ver Tabela' : 'Ver Cards'}
+                  </Button>
+                </div>
               </CardTitle>
               <CardDescription>
                 Filtre e ordene os leads conforme sua necessidade
               </CardDescription>
             </CardHeader>
-            <CardContent className='p-6'>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'>
+            <CardContent className={`p-6 ${showFilters ? 'block' : 'hidden'} sm:block`}>
+              <div className='grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4'>
                 {/* Busca */}
                 <div className='relative'>
                   <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
@@ -643,9 +736,9 @@ export default function TodosLeadsV2() {
                 </Select>
 
                 {/* Ordenação */}
-                <div className='flex gap-2'>
+                <div className='flex flex-col sm:flex-row gap-2'>
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger>
+                    <SelectTrigger className='flex-1'>
                       <SelectValue placeholder='Ordenar por' />
                     </SelectTrigger>
                     <SelectContent>
@@ -661,27 +754,33 @@ export default function TodosLeadsV2() {
                     onClick={() =>
                       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                     }
+                    className='flex-shrink-0'
                   >
                     <ArrowUpDown className='h-4 w-4' />
                   </Button>
                 </div>
               </div>
 
-              <div className='flex justify-between items-center mt-4'>
-                <p className='text-sm text-gray-600 dark:text-gray-400'>
+              <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-4'>
+                <p className='text-xs sm:text-sm text-gray-600 dark:text-gray-400'>
                   Mostrando {filteredLeads.length} de {leads.length} leads
                 </p>
-                <Button variant='outline' onClick={handleResetFilters}>
-                  <RefreshCw className='mr-2 h-4 w-4' />
-                  Limpar Filtros
-                </Button>
+                <div className='flex items-center gap-2 w-full sm:w-auto'>
+                  <Button variant='outline' onClick={handleResetFilters} className='flex-1 sm:flex-none'>
+                    <RefreshCw className='mr-2 h-4 w-4' />
+                    Limpar Filtros
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
+        )}
 
         {/* 📋 TABELA DE LEADS */}
+        {true && (
         <motion.div
+          className='overflow-x-auto min-w-0'
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -723,7 +822,9 @@ export default function TodosLeadsV2() {
                   </Button>
                 </div>
               ) : (
-                <div className='overflow-x-auto'>
+                <>
+                {/* Tabela */}
+                <div className={`overflow-x-auto ${mobileViewMode === 'table' ? 'block' : 'hidden'} sm:block`}>
                   <Table className='min-w-full'>
                     <TableHeader>
                       <TableRow className='hover:bg-transparent'>
@@ -753,12 +854,12 @@ export default function TodosLeadsV2() {
                             )}
                           </div>
                         </TableHead>
-                        <TableHead className='min-w-[120px]'>🏠 Interesse</TableHead>
-                        <TableHead className='min-w-[100px]'>💰 Valor</TableHead>
-                        <TableHead className='min-w-[120px]'>📞 Contato</TableHead>
-                        <TableHead className='min-w-[120px] hidden lg:table-cell'>👨‍💼 Corretor</TableHead>
-                        <TableHead className='min-w-[100px]'>📊 Status</TableHead>
-                        <TableHead className='min-w-[120px]'>⚙️ Ações</TableHead>
+                        <TableHead className='min-w-[80px] sm:min-w-[120px]'>🏠 Interesse</TableHead>
+                        <TableHead className='min-w-[80px] sm:min-w-[100px] hidden md:table-cell'>💰 Valor</TableHead>
+                        <TableHead className='min-w-[100px] sm:min-w-[120px] hidden sm:table-cell'>📞 Contato</TableHead>
+                        <TableHead className='min-w-[100px] sm:min-w-[120px] hidden lg:table-cell'>👨‍💼 Corretor</TableHead>
+                        <TableHead className='min-w-[80px] sm:min-w-[100px]'>📊 Status</TableHead>
+                        <TableHead className='min-w-[100px] sm:min-w-[120px]'>⚙️ Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -879,7 +980,7 @@ export default function TodosLeadsV2() {
                             </TableCell>
 
                             {/* Valor */}
-                            <TableCell>
+                            <TableCell className='hidden md:table-cell'>
                               <div className='flex flex-col gap-1'>
                                 {(lead as any).orcamento && (
                                   <span className='font-bold text-green-600 dark:text-green-400'>
@@ -899,7 +1000,7 @@ export default function TodosLeadsV2() {
                             </TableCell>
 
                             {/* Contato */}
-                            <TableCell>
+                            <TableCell className='hidden sm:table-cell'>
                               <div className='flex flex-col gap-1'>
                                 {lead.telefone && (
                                   <span className='text-sm text-gray-900 dark:text-white flex items-center gap-1'>
@@ -917,7 +1018,7 @@ export default function TodosLeadsV2() {
                             </TableCell>
 
                             {/* Corretor */}
-                            <TableCell>
+                            <TableCell className='hidden lg:table-cell'>
                               <div className='flex items-center gap-2'>
                                 <Avatar className='h-6 w-6'>
                                   <AvatarFallback className='bg-gradient-to-br from-green-400 to-blue-600 text-white text-xs'>
@@ -1002,10 +1103,23 @@ export default function TodosLeadsV2() {
                     </TableBody>
                   </Table>
                 </div>
+                {/* Lista compacta (cards) */}
+                <div className={`${mobileViewMode === 'cards' ? 'grid' : 'hidden'} sm:hidden grid-cols-1 gap-3 p-4`}>
+                  {paginatedData.map((lead, index) => (
+                    <LeadCardCompact
+                      key={lead.id}
+                      lead={lead}
+                      onViewDetails={handleViewDetails}
+                      onCall={handleCall}
+                      onEmail={handleEmail}
+                      onScheduleVisit={handleScheduleVisit}
+                    />
+                  ))}
+                </div>
+                </>
               )}
             </CardContent>
           </Card>
-        </motion.div>
 
         {/* 📄 PAGINAÇÃO */}
         {paginationState.totalPages > 1 && (
@@ -1013,60 +1127,64 @@ export default function TodosLeadsV2() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className='flex justify-center mt-6'
+            className='mt-6'
           >
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href='#'
-                    onClick={e => {
-                      e.preventDefault();
-                      prevPage();
-                    }}
-                    className={
-                      !paginationState.hasPrevPage
-                        ? 'pointer-events-none opacity-50'
-                        : ''
-                    }
-                  />
-                </PaginationItem>
-
-                {Array.from(
-                  { length: paginationState.totalPages },
-                  (_, i) => i + 1
-                ).map(page => (
-                  <PaginationItem key={page}>
-                    <PaginationLink
+            <div className='overflow-x-auto max-w-full'>
+              <Pagination>
+                <PaginationContent className='flex flex-wrap justify-center gap-1'>
+                  <PaginationItem>
+                    <PaginationPrevious
                       href='#'
                       onClick={e => {
                         e.preventDefault();
-                        goToPage(page);
+                        prevPage();
                       }}
-                      isActive={page === paginationState.page}
-                    >
-                      {page}
-                    </PaginationLink>
+                      className={
+                        !paginationState.hasPrevPage
+                          ? 'pointer-events-none opacity-50'
+                          : ''
+                      }
+                    />
                   </PaginationItem>
-                ))}
+
+                {Array.from(
+                    { length: paginationState.totalPages },
+                    (_, i) => i + 1
+                  ).map(page => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href='#'
+                        onClick={e => {
+                          e.preventDefault();
+                          goToPage(page);
+                        }}
+                        isActive={page === paginationState.page}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
 
                 <PaginationItem>
-                  <PaginationNext
-                    href='#'
-                    onClick={e => {
-                      e.preventDefault();
-                      nextPage();
-                    }}
-                    className={
-                      !paginationState.hasNextPage
-                        ? 'pointer-events-none opacity-50'
-                        : ''
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </motion.div>
+                    <PaginationNext
+                      href='#'
+                      onClick={e => {
+                        e.preventDefault();
+                        nextPage();
+                      }}
+                      className={
+                        !paginationState.hasNextPage
+                          ? 'pointer-events-none opacity-50'
+                          : ''
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+            </motion.div>
+          )}
+        </motion.div>
         )}
       </div>
 

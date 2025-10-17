@@ -78,8 +78,68 @@ export const useEvolutionDirect = () => {
 
       logger.debug('User obtido do contexto', { userId: user.id });
 
-      // Gerar nome único
-      const instanceName = `gerente_${user.id.replace(/-/g, '').substring(0, 12)}`;
+      // ✅ VERIFICAR SE JÁ EXISTE INSTÂNCIA ATIVA
+      const existingConfig = await supabase
+        .from('whatsapp_config')
+        .select('*')
+        .eq('manager_id', user.id)
+        .eq('provider', 'evolution-api')
+        .is('deleted_at', null)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      const existingInstance = existingConfig.data?.[0];
+      
+      if (existingInstance && existingInstance.status === 'authorized') {
+        logger.warn('Instância já existe e está conectada', {
+          instanceName: existingInstance.evolution_instance_name,
+          status: existingInstance.status,
+        });
+        
+        toast({
+          title: '⚠️ WhatsApp já conectado',
+          description: 'Você já possui uma instância WhatsApp conectada. Desconecte primeiro para criar uma nova.',
+          variant: 'destructive',
+        });
+        
+        setIsCreating(false);
+        isCreatingRef.current = false;
+        return;
+      }
+
+      // ✅ SE EXISTE MAS NÃO ESTÁ CONECTADA, DELETAR PRIMEIRO
+      if (existingInstance) {
+        logger.info('Deletando instância existente não conectada', {
+          instanceName: existingInstance.evolution_instance_name,
+          status: existingInstance.status,
+        });
+        
+        try {
+          // Deletar da Evolution API
+          await fetch(`${EVOLUTION_URL}/instance/delete/${existingInstance.evolution_instance_name}`, {
+            method: 'DELETE',
+            headers: { apikey: EVOLUTION_API_KEY },
+          });
+          
+          // Marcar como deletada no banco
+          await supabase
+            .from('whatsapp_config')
+            .update({
+              deleted_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingInstance.id);
+            
+          logger.info('✅ Instância existente deletada');
+        } catch (error) {
+          logger.warn('Erro ao deletar instância existente', { error });
+        }
+      }
+
+      // Gerar nome único com timestamp para evitar conflitos
+      const timestamp = Date.now().toString(36);
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const instanceName = `gerente_${user.id.replace(/-/g, '').substring(0, 8)}_${timestamp}_${randomSuffix}`;
       const instanceToken = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 
       logger.info('Criando instância', { instanceName, userId: user.id });
@@ -103,14 +163,6 @@ export const useEvolutionDirect = () => {
               url: 'https://bxtuynqauqasigcbocbm.supabase.co/functions/v1/evolution-webhook',
               webhookByEvents: true,
               webhookBase64: false,
-              events: [
-                'MESSAGES_UPSERT',
-                'MESSAGES_UPDATE',
-                'CONNECTION_UPDATE',
-              ],
-            },
-            websocket: {
-              enabled: true,
               events: [
                 'MESSAGES_UPSERT',
                 'MESSAGES_UPDATE',
@@ -147,19 +199,39 @@ export const useEvolutionDirect = () => {
 
           logger.info('Instância órfã deletada, tentando criar novamente...');
 
-          // Tentar criar novamente (recursivo - chama createInstance de novo)
-          toast.info(
-            '🔄 Limpando instância antiga... Tente novamente em 2 segundos.'
-          );
+          // ✅ MELHORIA: Tentar criar novamente automaticamente
+          toast({
+            title: '🔄 Limpando instância antiga...',
+            description: 'Criando nova instância automaticamente...',
+          });
 
-          // Resetar estado e permitir nova tentativa
-          setIsCreating(false);
-          isCreatingRef.current = false;
+          // Aguardar um pouco para garantir que a deleção foi processada
+          await new Promise(resolve => setTimeout(resolve, 2000));
 
-          return; // Usuário precisa clicar novamente
+          // Tentar criar novamente automaticamente
+          return await createInstance();
         }
 
-        throw new Error(`Erro ao criar instância: ${errorText}`);
+        // ✅ MELHORIA: Tratamento de erro mais detalhado
+        let errorMessage = `Erro ao criar instância: ${errorText}`;
+        
+        if (response.status === 403) {
+          errorMessage = `Acesso negado (403). Verifique se a API key está correta e se você tem permissão para criar instâncias.`;
+        } else if (response.status === 401) {
+          errorMessage = `Não autorizado (401). API key inválida ou expirada.`;
+        } else if (response.status === 429) {
+          errorMessage = `Muitas requisições (429). Tente novamente em alguns minutos.`;
+        } else if (response.status >= 500) {
+          errorMessage = `Erro do servidor (${response.status}). Tente novamente mais tarde.`;
+        }
+        
+        logger.error('Erro detalhado ao criar instância', {
+          status: response.status,
+          errorText,
+          errorMessage,
+        });
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -381,52 +453,64 @@ export const useEvolutionDirect = () => {
           setStatus('authorized');
           setQrCode(null);
 
-          // ✅ 4. SALVAR SESSÃO NO BANCO (UPSERT em background)
+          // ✅ 4. SALVAR SESSÃO NO BANCO (UPDATE DIRETO)
           if (user) {
-            logger.info('🔍 Iniciando UPSERT', {
+            logger.info('🔍 Atualizando status para authorized', {
               userId: user.id,
               instanceName: instanceData.instanceName,
-              instanceToken:
-                instanceData.instanceToken?.substring(0, 20) + '...',
               status: 'authorized',
             });
 
-            void supabase
+            // ✅ UPDATE DIRETO - Mais confiável que UPSERT
+            const { error: updateError } = await supabase
               .from('whatsapp_config')
-              .upsert(
-                {
-                  manager_id: user.id,
-                  provider: 'evolution-api',
-                  instance_name: instanceData.instanceName, // ✅ Campo obrigatório
-                  evolution_instance_name: instanceData.instanceName,
-                  evolution_instance_token: instanceData.instanceToken,
-                  status: 'authorized',
-                  qr_code: null,
-                  auto_created: true,
-                  updated_at: new Date().toISOString(),
-                },
-                {
-                  onConflict: 'manager_id',
-                }
-              )
-              .select()
-              .then(({ data: upsertData, error: upsertError }) => {
-                if (upsertError) {
-                  logger.error('❌ UPSERT FALHOU!', {
-                    error: upsertError.message,
-                    code: upsertError.code,
-                    details: upsertError.details,
-                    hint: upsertError.hint,
-                  });
-                  console.error('❌ ERRO CRÍTICO NO UPSERT:', upsertError);
-                } else {
-                  logger.info('✅ UPSERT SUCESSO!', {
-                    rows: upsertData?.length || 0,
-                    data: upsertData?.[0],
-                  });
-                  console.log('✅ WhatsApp salvo no banco:', upsertData?.[0]);
-                }
+              .update({
+                status: 'authorized',
+                evolution_instance_token: instanceData.instanceToken,
+                qr_code: null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('manager_id', user.id)
+              .eq('evolution_instance_name', instanceData.instanceName);
+
+            if (updateError) {
+              logger.error('❌ UPDATE FALHOU!', {
+                error: updateError.message,
+                code: updateError.code,
+                details: updateError.details,
               });
+              
+              // ✅ Fallback: Tentar UPSERT se UPDATE falhar
+              logger.info('🔄 Tentando UPSERT como fallback...');
+              const { error: upsertError } = await supabase
+                .from('whatsapp_config')
+                .upsert(
+                  {
+                    manager_id: user.id,
+                    provider: 'evolution-api',
+                    instance_name: instanceData.instanceName,
+                    evolution_instance_name: instanceData.instanceName,
+                    evolution_instance_token: instanceData.instanceToken,
+                    status: 'authorized',
+                    qr_code: null,
+                    auto_created: true,
+                    updated_at: new Date().toISOString(),
+                  },
+                  {
+                    onConflict: 'manager_id,instance_name',
+                  }
+                );
+                
+              if (upsertError) {
+                logger.error('❌ UPSERT também falhou!', {
+                  error: upsertError.message,
+                });
+              } else {
+                logger.info('✅ UPSERT SUCESSO!');
+              }
+            } else {
+              logger.info('✅ UPDATE SUCESSO! Status atualizado para authorized');
+            }
           }
 
           // ✅ 5. ENVIAR MENSAGEM TESTE (opcional)
@@ -640,9 +724,10 @@ export const useEvolutionDirect = () => {
           .eq('manager_id', user.id)
           .eq('provider', 'evolution-api')
           .is('deleted_at', null)
-          .maybeSingle()) as any;
+          .order('updated_at', { ascending: false })
+          .limit(1)) as any;
 
-        const config = result.data;
+        const config = result.data?.[0]; // Pegar o primeiro (mais recente)
         const error = result.error;
 
         logger.debug('Resultado da busca no banco', {

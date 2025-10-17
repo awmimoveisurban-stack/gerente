@@ -322,7 +322,11 @@ export default function KanbanEnhanced() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 lg:gap-6'>
+          {/* Em mobile, use rolagem horizontal com snap para colunas */}
+          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 lg:gap-6 md:[overflow:visible] [overflow-x:auto] [scroll-snap-type:x_mandatory] [-ms-overflow-style:none] [scrollbar-width:none]'>
+            {/* esconder scrollbar nos navegadores comuns */}
+            {/* style via tailwind arbitrary: */}
+            {/* cada coluna fará snap no início */}
             {COLUMNS.map(column => (
               <KanbanColumn
                 key={column.id}
