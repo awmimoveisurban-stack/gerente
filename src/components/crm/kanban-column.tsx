@@ -46,14 +46,14 @@ export function KanbanColumn({
     <Card
       className={`flex flex-col h-full transition-all duration-200 ${bgColor} ${isOver ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`}
     >
-      <CardHeader className='pb-4 border-b border-white/20 dark:border-gray-700/20'>
+      <CardHeader className='pb-3 border-b border-white/20 dark:border-gray-700/20'>
         <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div className={`p-2.5 rounded-xl ${color} shadow-sm`}>
-              <Icon className='h-4 w-4 text-white' />
+          <div className='flex items-center gap-2 min-w-0 flex-1'>
+            <div className={`p-2 rounded-lg ${color} shadow-sm shrink-0`}>
+              <Icon className='h-3 w-3 sm:h-4 sm:w-4 text-white' />
             </div>
-            <div>
-              <h3 className='font-semibold text-gray-900 dark:text-white'>
+            <div className='min-w-0 flex-1'>
+              <h3 className='font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate'>
                 {title}
               </h3>
               <p className='text-xs text-gray-500 dark:text-gray-400'>
@@ -65,30 +65,30 @@ export function KanbanColumn({
           </div>
           <Badge
             variant='secondary'
-            className='bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-medium'
+            className='bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-medium shrink-0 text-xs'
           >
             {leads.length}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className='flex-1 overflow-hidden p-4'>
+      <CardContent className='flex-1 overflow-hidden p-3 sm:p-4'>
         <div
           ref={setNodeRef}
-          className='h-full overflow-y-auto space-y-4 pr-2 -mr-2'
+          className='h-full overflow-y-auto space-y-3 sm:space-y-4 pr-1 sm:pr-2 -mr-1 sm:-mr-2'
         >
           <SortableContext
             items={leads.map(l => l.id)}
             strategy={verticalListSortingStrategy}
           >
             {leads.length === 0 ? (
-              <div className='text-center py-12'>
-                <div className='w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center'>
-                  <Icon className='h-6 w-6 text-gray-400' />
+              <div className='text-center py-8 sm:py-12'>
+                <div className='w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center'>
+                  <Icon className='h-5 w-5 sm:h-6 sm:w-6 text-gray-400' />
                 </div>
-                <p className='text-sm text-gray-500 dark:text-gray-400 font-medium'>
+                <p className='text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium'>
                   Nenhum lead nesta etapa
                 </p>
-                <p className='text-xs text-gray-400 dark:text-gray-500 mt-1'>
+                <p className='text-xs text-gray-400 dark:text-gray-500 mt-1 hidden sm:block'>
                   Arraste leads aqui ou adicione novos
                 </p>
               </div>

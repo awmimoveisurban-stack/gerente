@@ -575,7 +575,7 @@ export default function TodosLeadsV2() {
               </CardDescription>
             </CardHeader>
             <CardContent className='p-6'>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'>
                 {/* Busca */}
                 <div className='relative'>
                   <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
@@ -724,11 +724,11 @@ export default function TodosLeadsV2() {
                 </div>
               ) : (
                 <div className='overflow-x-auto'>
-                  <Table>
+                  <Table className='min-w-full'>
                     <TableHeader>
                       <TableRow className='hover:bg-transparent'>
                         <TableHead
-                          className='cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800'
+                          className='cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 min-w-[120px]'
                           onClick={() => handleSort('score_ia')}
                         >
                           <div className='flex items-center gap-2'>
@@ -741,7 +741,7 @@ export default function TodosLeadsV2() {
                           </div>
                         </TableHead>
                         <TableHead
-                          className='cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800'
+                          className='cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 min-w-[150px]'
                           onClick={() => handleSort('nome')}
                         >
                           <div className='flex items-center gap-2'>
@@ -753,12 +753,12 @@ export default function TodosLeadsV2() {
                             )}
                           </div>
                         </TableHead>
-                        <TableHead>🏠 Interesse</TableHead>
-                        <TableHead>💰 Valor</TableHead>
-                        <TableHead>📞 Contato</TableHead>
-                        <TableHead>👨‍💼 Corretor</TableHead>
-                        <TableHead>📊 Status</TableHead>
-                        <TableHead>⚙️ Ações</TableHead>
+                        <TableHead className='min-w-[120px]'>🏠 Interesse</TableHead>
+                        <TableHead className='min-w-[100px]'>💰 Valor</TableHead>
+                        <TableHead className='min-w-[120px]'>📞 Contato</TableHead>
+                        <TableHead className='min-w-[120px] hidden lg:table-cell'>👨‍💼 Corretor</TableHead>
+                        <TableHead className='min-w-[100px]'>📊 Status</TableHead>
+                        <TableHead className='min-w-[120px]'>⚙️ Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
