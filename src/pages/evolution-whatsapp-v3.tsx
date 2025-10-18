@@ -38,7 +38,6 @@ import {
   StandardMetricCard,
   StandardGrid,
   useStandardLayout,
-  STANDARD_COLORS,
   LAYOUT_CONFIG,
   STANDARD_ANIMATIONS,
 } from '@/components/layout/standard-layout';
@@ -125,13 +124,13 @@ export default function EvolutionWhatsAppAuto() {
   const getStatusColor = () => {
     switch (whatsappStatus.status) {
       case 'authorized':
-        return STANDARD_COLORS.success;
+        return 'success';
       case 'connecting':
-        return STANDARD_COLORS.warning;
+        return 'warning';
       case 'disconnected':
-        return STANDARD_COLORS.danger;
+        return 'danger';
       default:
-        return STANDARD_COLORS.info;
+        return 'info';
     }
   };
 
@@ -217,20 +216,20 @@ export default function EvolutionWhatsAppAuto() {
           <StandardMetricCard
             title="Status da Conexão"
             value={whatsappStatus.status === 'authorized' ? 'Conectado' : 'Desconectado'}
-            icon={<Phone className="h-6 w-6 text-white" />}
+            icon={Phone}
             color={getStatusColor()}
           />
           <StandardMetricCard
             title="Instância"
             value={whatsappStatus.instanceName || 'N/A'}
-            icon={<Smartphone className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.info}
+            icon={Smartphone}
+            color="info"
           />
           <StandardMetricCard
             title="Tempo Online"
             value={whatsappStatus.isOnline ? 'Ativo' : 'Inativo'}
-            icon={<Activity className="h-6 w-6 text-white" />}
-            color={whatsappStatus.isOnline ? STANDARD_COLORS.success : STANDARD_COLORS.danger}
+            icon={Activity}
+            color={whatsappStatus.isOnline ? "success" : "danger"}
           />
         </StandardGrid>
 
