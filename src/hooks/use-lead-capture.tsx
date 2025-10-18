@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedAuth } from '@/contexts/unified-auth-context';
 import { LeadConversation } from '@/hooks/use-lead-conversations';
+import { ContextualAIAnalyzer, ConversationContext } from '@/utils/contextual-ai-analyzer';
 
 // =====================================================
 // TIPOS E INTERFACES
@@ -42,6 +43,7 @@ export interface LeadCaptureResult {
   lead: LeadData | null;
   isNew: boolean;
   conversation?: LeadConversation | null;
+  contextualAnalysis?: any; // Análise contextual da IA
   error?: string;
 }
 
@@ -84,8 +86,8 @@ export const useLeadCapture = () => {
       const existingLead = existingLeads?.[0];
 
       if (existingLead) {
-        // 3. LEAD EXISTENTE - ATUALIZAR COM PRESERVAÇÃO DE DADOS SENSÍVEIS
-        return await updateExistingLead(existingLead, leadData, conversationData);
+        // 3. LEAD EXISTENTE - ATUALIZAR COM CONTEXTO HISTÓRICO
+        return await updateExistingLeadWithContext(existingLead, leadData, conversationData);
       } else {
         // 4. NOVO LEAD - CRIAR
         return await createNewLead(leadData, conversationData);
@@ -178,6 +180,151 @@ export const useLeadCapture = () => {
 
     } catch (error) {
       console.error('Erro ao atualizar lead existente:', error);
+      throw error;
+    }
+  };
+
+  // =====================================================
+  // ATUALIZAR LEAD EXISTENTE COM CONTEXTO HISTÓRICO
+  // =====================================================
+  const updateExistingLeadWithContext = async (
+    existingLead: any,
+    leadData: LeadData,
+    conversationData?: ConversationData
+  ): Promise<LeadCaptureResult> => {
+    try {
+      // 1. BUSCAR HISTÓRICO DE CONVERSAS
+      const { data: conversationHistory, error: historyError } = await supabase
+        .from('lead_conversations')
+        .select('*')
+        .eq('lead_id', existingLead.id)
+        .order('created_at', { ascending: true })
+        .limit(10); // Últimas 10 mensagens
+
+      if (historyError) {
+        console.warn('Erro ao buscar histórico de conversas:', historyError);
+        // Continuar sem histórico se houver erro
+      }
+
+      // 2. PREPARAR CONTEXTO PARA ANÁLISE IA
+      const contextHistory: ConversationContext[] = (conversationHistory || []).map(conv => ({
+        id: conv.id,
+        mensagem: conv.mensagem || '',
+        canal: conv.canal,
+        tipo: conv.tipo,
+        created_at: conv.created_at,
+        metadata: conv.metadata || {}
+      }));
+
+      // 3. ANÁLISE IA COM CONTEXTO HISTÓRICO
+      let contextualAnalysis = null;
+      if (conversationData?.mensagem) {
+        try {
+          contextualAnalysis = ContextualAIAnalyzer.analyzeWithContext(
+            conversationData.mensagem,
+            existingLead.nome || 'Cliente',
+            contextHistory
+          );
+          
+          console.log('🤖 Análise contextual:', {
+            score: contextualAnalysis.score,
+            evolucao: contextualAnalysis.evolucao_interesse,
+            engajamento: contextualAnalysis.engajamento_temporal,
+            mensagensAnalisadas: contextualAnalysis.mensagens_analisadas,
+            alertas: contextualAnalysis.alertas_contexto
+          });
+        } catch (aiError) {
+          console.warn('Erro na análise contextual:', aiError);
+          // Continuar sem análise contextual
+        }
+      }
+
+      // 4. PREPARAR DADOS DE ATUALIZAÇÃO COM CONTEXTO
+      const updateData: any = {
+        // Campos básicos (usar ?? para preservar valores existentes)
+        nome: leadData.nome ?? existingLead.nome,
+        email: leadData.email ?? existingLead.email,
+        status: leadData.status ?? existingLead.status,
+        interesse: leadData.interesse ?? existingLead.interesse,
+        cidade: leadData.cidade ?? existingLead.cidade,
+        orcamento: leadData.orcamento ?? existingLead.orcamento,
+        origem: leadData.origem ?? existingLead.origem,
+        
+        // Timestamps
+        updated_at: new Date().toISOString(),
+        last_interaction_at: new Date().toISOString(),
+        
+        // Preservar dados sensíveis (NÃO atualizar)
+        // user_id, manager_id, atribuido_a, created_at permanecem inalterados
+      };
+
+      // 5. APLICAR ANÁLISE CONTEXTUAL SE DISPONÍVEL
+      if (contextualAnalysis) {
+        updateData.score_ia = contextualAnalysis.score;
+        updateData.prioridade = contextualAnalysis.prioridade;
+        
+        // Atualizar observações com contexto
+        const observacoesContextuais = [
+          existingLead.observacoes || '',
+          `[CONTEXTO] ${contextualAnalysis.contexto_completo}`,
+          `[EVOLUÇÃO] ${contextualAnalysis.evolucao_interesse.toUpperCase()}`,
+          `[ENGAJAMENTO] ${contextualAnalysis.engajamento_temporal.toUpperCase()}`,
+          `[MENSAGENS] ${contextualAnalysis.mensagens_analisadas} analisadas`
+        ].filter(Boolean).join('\n');
+        
+        updateData.observacoes = observacoesContextuais;
+        
+        // Adicionar alertas se houver
+        if (contextualAnalysis.alertas_contexto.length > 0) {
+          updateData.observacoes += `\n[ALERTAS] ${contextualAnalysis.alertas_contexto.join('; ')}`;
+        }
+      } else {
+        // Fallback para análise simples se contextual falhar
+        updateData.score_ia = leadData.score_ia ?? existingLead.score_ia;
+        updateData.prioridade = leadData.prioridade ?? existingLead.prioridade;
+        updateData.observacoes = leadData.observacoes ?? existingLead.observacoes;
+      }
+
+      // 6. ATUALIZAR LEAD
+      const { data: updatedLead, error: updateError } = await supabase
+        .from('leads')
+        .update(updateData)
+        .eq('id', existingLead.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar lead: ${updateError.message}`);
+      }
+
+      // 7. REGISTRAR NOVA CONVERSA
+      let conversation = null;
+      if (conversationData) {
+        conversation = await createConversation(existingLead.id, conversationData);
+      }
+
+      // 8. LOG DE AUDITORIA
+      await logAuditAction(existingLead.id, 'update', existingLead, updatedLead);
+
+      // 9. NOTIFICAÇÃO COM CONTEXTO
+      const contextoInfo = contextualAnalysis ? 
+        ` (${contextualAnalysis.evolucao_interesse}, ${contextualAnalysis.mensagens_analisadas} msgs)` : '';
+      
+      toast({
+        title: '✅ Lead Atualizado com Contexto',
+        description: `Lead ${existingLead.nome || existingLead.telefone} foi atualizado${contextoInfo}`,
+      });
+
+      return {
+        success: true,
+        lead: updatedLead,
+        isNew: false,
+        conversation,
+        contextualAnalysis, // Retornar análise contextual
+      };
+
+    } catch (error) {
+      console.error('Erro ao atualizar lead com contexto:', error);
       throw error;
     }
   };
