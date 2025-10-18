@@ -102,22 +102,7 @@ import {
   Settings,
 } from 'lucide-react';
 
-// ✅ IMPORTAÇÕES PADRONIZADAS
-import {
-  StandardPageLayout,
-  StandardHeader,
-  StandardGrid,
-  useStandardLayout,
-  STANDARD_COLORS,
-  LAYOUT_CONFIG,
-  STANDARD_ANIMATIONS,
-} from '@/components/layout/standard-layout';
-import { 
-  StandardMetricCard,
-  StandardContentCard,
-  StandardStatCard,
-  StandardContainer 
-} from '@/components/ui/standard-card';
+// ✅ IMPORTAÇÕES PADRONIZADAS (REMOVIDAS - USANDO APENAS AS NOVAS)
 
 export default function TodosLeadsV3() {
   const navigate = useNavigate();
