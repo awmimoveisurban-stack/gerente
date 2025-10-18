@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
   DragEndEvent,
@@ -303,7 +302,7 @@ export default function KanbanEnhanced() {
     <>
       <Button
         onClick={handleAddLead}
-        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
       >
         <Plus className="mr-2 h-4 w-4" />
         Novo Lead
@@ -368,11 +367,8 @@ export default function KanbanEnhanced() {
         <KanbanAlerts leads={filteredLeads} />
 
         {/* ✅ MÉTRICAS PADRONIZADAS */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
+        {/* ✅ MÉTRICAS PRINCIPAIS - SEM ANIMAÇÕES */}
+        <div className="mb-8">
           <StandardGrid columns="4">
             <StandardMetricCard
               title="Total de Leads"
@@ -399,7 +395,7 @@ export default function KanbanEnhanced() {
               color="info"
             />
           </StandardGrid>
-        </motion.div>
+        </div>
 
         {/* ✅ FASE 2.4 & 3.2: Métricas Expandidas + Comparativo Mensal (apenas para gerente) */}
         {isGerente && profiles.length > 0 && (
@@ -421,11 +417,8 @@ export default function KanbanEnhanced() {
         />
 
         {/* ✅ QUADRO KANBAN COM ANIMAÇÕES */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+        {/* ✅ PIPELINE PRINCIPAL - SEM ANIMAÇÕES */}
+        <div className="mb-8">
           <DndContext
             sensors={sensors}
             onDragStart={handleDragStart}
@@ -434,14 +427,7 @@ export default function KanbanEnhanced() {
             {/* ✅ GRID RESPONSIVO MELHORADO */}
             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 lg:gap-6 md:[overflow:visible] [overflow-x:auto] [scroll-snap-type:x_mandatory] [-ms-overflow-style:none] [scrollbar-width:none]'>
               {COLUMNS.map((column, index) => (
-                <motion.div
-                  key={column.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                  whileHover={{ scale: 1.02 }}
-                  className="snap-start"
-                >
+                <div key={column.id} className="snap-start">
                   <KanbanColumn
                     id={column.id}
                     title={column.title}
@@ -469,7 +455,7 @@ export default function KanbanEnhanced() {
                       />
                     )}
                   />
-                </motion.div>
+                </div>
               ))}
             </div>
 
@@ -487,9 +473,9 @@ export default function KanbanEnhanced() {
                 />
               </div>
             ) : null}
-          </DragOverlay>
-        </DndContext>
-        </motion.div>
+            </DragOverlay>
+          </DndContext>
+        </div>
 
         {/* Modais */}
         <AddLeadModal
