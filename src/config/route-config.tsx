@@ -40,6 +40,8 @@ const TestNotificationsDebug = lazy(() => import('@/pages/test-notifications-deb
 const GerentePerformance = lazy(() => import('@/pages/gerente-performance'));
 const Profile = lazy(() => import('@/pages/profile')); // ✅ Página de perfil
 const Configuracoes = lazy(() => import('@/pages/configuracoes')); // ✅ Página de configurações
+const DiagnosticoLeads = lazy(() => import('@/pages/diagnostico-leads')); // ✅ Página de diagnóstico
+const TesteCapturaLeads = lazy(() => import('@/pages/teste-captura-leads')); // ✅ Página de teste
 
 // ============================================================================
 // DEFINIÇÃO DE ROTAS
@@ -202,6 +204,22 @@ export const routes: RouteObject[] = [
     element: (
       <ProtectedRoute allowedRoles={['gerente']}>
         <EvolutionWhatsAppAuto />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/diagnostico-leads',
+    element: (
+      <ProtectedRoute allowedRoles={['gerente']}>
+        <DiagnosticoLeads />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/teste-captura-leads',
+    element: (
+      <ProtectedRoute allowedRoles={['gerente']}>
+        <TesteCapturaLeads />
       </ProtectedRoute>
     ),
   },
