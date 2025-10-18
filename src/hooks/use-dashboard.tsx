@@ -31,12 +31,15 @@ export interface LeadRecente {
   nome: string;
   corretor: string;
   status: string;
-  valor: number;
+  valor: number | null;
   created_at: string;
   score?: number | null;
   origem?: string | null;
   observacoes?: string | null;
   mensagem_inicial?: string | null;
+  prioridade?: string | null;
+  cidade?: string | null;
+  interesse?: string | null;
 }
 
 export const useDashboard = () => {
@@ -218,12 +221,15 @@ export const useDashboard = () => {
             nome: lead.nome,
             corretor: lead.corretor || 'Sem corretor',
             status: lead.status,
-            valor: lead.valor_interesse || 0,
+            valor: lead.valor_interesse || lead.orcamento || null,
             created_at: lead.created_at,
-            score: lead.score || null,
+            score: lead.score_ia || lead.score || null,
             origem: lead.origem || null,
             observacoes: lead.observacoes || null,
             mensagem_inicial: lead.mensagem_inicial || null,
+            prioridade: lead.prioridade || null,
+            cidade: lead.cidade || null,
+            interesse: lead.interesse || lead.imovel_interesse || null,
           }));
 
         setLeadsRecentes(recentes);

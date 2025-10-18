@@ -268,10 +268,10 @@ export const AITooltip: React.FC<AITooltipProps> = ({
                       <span>Cidade: {lead.cidade}</span>
                     </div>
                   )}
-                  {lead.orcamento && (
+                  {(lead.orcamento || lead.valor_interesse) && (
                     <div className="flex items-center gap-1">
                       <DollarSign className="h-3 w-3" />
-                      <span>Orçamento: R$ {lead.orcamento.toLocaleString('pt-BR')}</span>
+                      <span>Valor: R$ {(lead.orcamento || lead.valor_interesse || 0).toLocaleString('pt-BR')}</span>
                     </div>
                   )}
                 </div>

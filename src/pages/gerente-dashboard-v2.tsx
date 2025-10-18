@@ -662,7 +662,10 @@ export default function GerenteDashboardV2() {
 
                       <div className='text-right'>
                         <p className='font-bold text-green-600 dark:text-green-400 mb-2'>
-                          R$ {lead.valor?.toLocaleString('pt-BR') || '0'}
+                          {lead.valor && lead.valor > 0 
+                            ? `R$ ${lead.valor.toLocaleString('pt-BR')}`
+                            : 'Valor não informado'
+                          }
                         </p>
                         <Badge variant='outline' className='mb-1'>
                           {lead.status}
