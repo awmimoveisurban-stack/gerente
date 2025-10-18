@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedAuth } from '@/contexts/unified-auth-context';
+import { LeadConversation } from '@/hooks/use-lead-conversations';
 
 // =====================================================
 // TIPOS E INTERFACES
@@ -38,9 +39,9 @@ export interface ConversationData {
 
 export interface LeadCaptureResult {
   success: boolean;
-  lead: any;
+  lead: LeadData | null;
   isNew: boolean;
-  conversation?: any;
+  conversation?: LeadConversation | null;
   error?: string;
 }
 
@@ -122,17 +123,17 @@ export const useLeadCapture = () => {
     try {
       // Preservar dados sensíveis
       const updateData: any = {
-        // Atualizar campos relevantes
-        nome: leadData.nome || existingLead.nome,
-        email: leadData.email || existingLead.email,
-        status: leadData.status || existingLead.status,
-        observacoes: leadData.observacoes || existingLead.observacoes,
-        interesse: leadData.interesse || existingLead.interesse,
-        cidade: leadData.cidade || existingLead.cidade,
-        orcamento: leadData.orcamento || existingLead.orcamento,
-        origem: leadData.origem || existingLead.origem,
-        prioridade: leadData.prioridade || existingLead.prioridade,
-        score_ia: leadData.score_ia || existingLead.score_ia,
+        // Atualizar campos relevantes (usar ?? para preservar valores existentes)
+        nome: leadData.nome ?? existingLead.nome,
+        email: leadData.email ?? existingLead.email,
+        status: leadData.status ?? existingLead.status,
+        observacoes: leadData.observacoes ?? existingLead.observacoes,
+        interesse: leadData.interesse ?? existingLead.interesse,
+        cidade: leadData.cidade ?? existingLead.cidade,
+        orcamento: leadData.orcamento ?? existingLead.orcamento,
+        origem: leadData.origem ?? existingLead.origem,
+        prioridade: leadData.prioridade ?? existingLead.prioridade,
+        score_ia: leadData.score_ia ?? existingLead.score_ia,
         
         // Atualizar timestamps
         updated_at: new Date().toISOString(),

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedAuth } from '@/contexts/unified-auth-context';
@@ -109,7 +109,7 @@ export const useLeadAudit = (leadId?: string) => {
       setAuditLogs(processedLogs);
       
       // Calcular estatísticas
-      calculateStats(processedLogs);
+      setStats(calculateStats(processedLogs));
 
     } catch (error) {
       console.error('Erro ao buscar logs de auditoria:', error);
@@ -169,7 +169,7 @@ export const useLeadAudit = (leadId?: string) => {
       }));
 
       setAuditLogs(processedLogs);
-      calculateStats(processedLogs);
+      setStats(calculateStats(processedLogs));
 
     } catch (error) {
       console.error('Erro ao buscar todos os logs de auditoria:', error);
@@ -234,7 +234,7 @@ export const useLeadAudit = (leadId?: string) => {
         };
 
         setAuditLogs(prev => [processedLog, ...prev]);
-        calculateStats([processedLog, ...auditLogs]);
+        setStats(calculateStats([processedLog, ...auditLogs]));
       }
 
       return auditLog;
@@ -251,41 +251,43 @@ export const useLeadAudit = (leadId?: string) => {
   }, [user, leadId, auditLogs, toast]);
 
   // =====================================================
-  // CALCULAR ESTATÍSTICAS DE AUDITORIA
+  // CALCULAR ESTATÍSTICAS DE AUDITORIA (OTIMIZADO COM useMemo)
   // =====================================================
-  const calculateStats = useCallback((logsList: AuditLogEntry[]) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const calculateStats = useMemo(() => {
+    return (logsList: AuditLogEntry[]) => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const stats: AuditStats = {
-      total: logsList.length,
-      porAcao: {},
-      porUsuario: {},
-      ultimaAcao: logsList[0]?.created_at,
-      acoesHoje: 0,
-      acoesEstaSemana: 0,
+      const stats: AuditStats = {
+        total: logsList.length,
+        porAcao: {},
+        porUsuario: {},
+        ultimaAcao: logsList[0]?.created_at,
+        acoesHoje: 0,
+        acoesEstaSemana: 0,
+      };
+
+      logsList.forEach(log => {
+        // Contar por ação
+        stats.porAcao[log.action] = (stats.porAcao[log.action] || 0) + 1;
+        
+        // Contar por usuário
+        const userName = log.user_nome || 'Sistema';
+        stats.porUsuario[userName] = (stats.porUsuario[userName] || 0) + 1;
+        
+        // Contar ações por período
+        const logDate = new Date(log.created_at);
+        if (logDate >= today) {
+          stats.acoesHoje++;
+        }
+        if (logDate >= weekAgo) {
+          stats.acoesEstaSemana++;
+        }
+      });
+
+      return stats;
     };
-
-    logsList.forEach(log => {
-      // Contar por ação
-      stats.porAcao[log.action] = (stats.porAcao[log.action] || 0) + 1;
-      
-      // Contar por usuário
-      const userName = log.user_nome || 'Sistema';
-      stats.porUsuario[userName] = (stats.porUsuario[userName] || 0) + 1;
-      
-      // Contar ações por período
-      const logDate = new Date(log.created_at);
-      if (logDate >= today) {
-        stats.acoesHoje++;
-      }
-      if (logDate >= weekAgo) {
-        stats.acoesEstaSemana++;
-      }
-    });
-
-    setStats(stats);
   }, []);
 
   // =====================================================

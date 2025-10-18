@@ -258,15 +258,18 @@ Responda APENAS JSON:
               const isUuid = (val?: string) =>
                 !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
               
+              // ✅ VALIDAÇÃO: Verificar se config existe antes de usar
+              const managerId = config?.manager_id && isUuid(config.manager_id) ? config.manager_id : null;
+              
               const leadData = {
                 nome: senderName,
                 telefone: phoneNumber,
                 origem: 'whatsapp',
                 status: 'novo',
                 observacoes: `[IA Score: ${aiAnalysis.score}/100 | Prioridade: ${aiAnalysis.prioridade}]\n${aiAnalysis.observacoes}\n\nMensagem: ${messageText}`,
-                user_id: isUuid(config.manager_id) ? config.manager_id : null,
-                manager_id: isUuid(config.manager_id) ? config.manager_id : undefined,
-                atribuido_a: isUuid(config.manager_id) ? config.manager_id : undefined,
+                user_id: managerId,
+                manager_id: managerId,
+                atribuido_a: managerId,
                 score_ia: aiAnalysis.score,
                 prioridade: aiAnalysis.prioridade,
                 interesse: aiAnalysis.tipo_imovel || undefined,

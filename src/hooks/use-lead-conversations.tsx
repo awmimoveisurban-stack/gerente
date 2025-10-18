@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedAuth } from '@/contexts/unified-auth-context';
@@ -105,7 +105,7 @@ export const useLeadConversations = (leadId?: string) => {
       setConversations(processedConversations);
       
       // Calcular estatísticas
-      calculateStats(processedConversations);
+      setStats(calculateStats(processedConversations));
 
     } catch (error) {
       console.error('Erro ao buscar conversas:', error);
@@ -167,7 +167,7 @@ export const useLeadConversations = (leadId?: string) => {
       
       // Recalcular estatísticas
       const updatedConversations = [processedConversation, ...conversations];
-      calculateStats(updatedConversations);
+      setStats(calculateStats(updatedConversations));
 
       toast({
         title: '✅ Conversa Adicionada',
@@ -280,23 +280,25 @@ export const useLeadConversations = (leadId?: string) => {
   }, [toast]);
 
   // =====================================================
-  // CALCULAR ESTATÍSTICAS
+  // CALCULAR ESTATÍSTICAS (OTIMIZADO COM useMemo)
   // =====================================================
-  const calculateStats = useCallback((conversationsList: LeadConversation[]) => {
-    const stats: ConversationStats = {
-      total: conversationsList.length,
-      porCanal: {},
-      porTipo: {},
-      ultimaConversa: conversationsList[0]?.created_at,
+  const calculateStats = useMemo(() => {
+    return (conversationsList: LeadConversation[]) => {
+      const stats: ConversationStats = {
+        total: conversationsList.length,
+        porCanal: {},
+        porTipo: {},
+        ultimaConversa: conversationsList[0]?.created_at,
+      };
+
+      // Contar por canal
+      conversationsList.forEach(conv => {
+        stats.porCanal[conv.canal] = (stats.porCanal[conv.canal] || 0) + 1;
+        stats.porTipo[conv.tipo] = (stats.porTipo[conv.tipo] || 0) + 1;
+      });
+
+      return stats;
     };
-
-    // Contar por canal
-    conversationsList.forEach(conv => {
-      stats.porCanal[conv.canal] = (stats.porCanal[conv.canal] || 0) + 1;
-      stats.porTipo[conv.tipo] = (stats.porTipo[conv.tipo] || 0) + 1;
-    });
-
-    setStats(stats);
   }, []);
 
   // =====================================================
@@ -351,7 +353,7 @@ export const useLeadConversations = (leadId?: string) => {
       }));
 
       setConversations(processedConversations);
-      calculateStats(processedConversations);
+      setStats(calculateStats(processedConversations));
 
     } catch (error) {
       console.error('Erro ao buscar todas as conversas:', error);

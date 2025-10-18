@@ -52,16 +52,6 @@ CREATE TRIGGER trigger_update_lead_conversations_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_lead_conversations_updated_at();
 
--- Adicionar constraint para garantir que lead_id existe
-ALTER TABLE public.lead_conversations 
-ADD CONSTRAINT fk_lead_conversations_lead_id 
-FOREIGN KEY (lead_id) REFERENCES public.leads(id) ON DELETE CASCADE;
-
--- Adicionar constraint para garantir que autor_id existe (se não for NULL)
-ALTER TABLE public.lead_conversations 
-ADD CONSTRAINT fk_lead_conversations_autor_id 
-FOREIGN KEY (autor_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
-
 -- Política RLS (Row Level Security) para controle de acesso
 ALTER TABLE public.lead_conversations ENABLE ROW LEVEL SECURITY;
 
