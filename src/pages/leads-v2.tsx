@@ -91,7 +91,7 @@ import { CallLeadModal } from '@/components/crm/call-lead-modal';
 import { EmailLeadModal } from '@/components/crm/email-lead-modal';
 import { ScheduleVisitModal } from '@/components/crm/schedule-visit-modal';
 import { AddLeadModal } from '@/components/crm/add-lead-modal';
-import { useLeads, type Lead } from '@/hooks/use-leads';
+import { useLeads, type Lead } from '@/hooks/use-leads-v2';
 import { useLeadsFilters } from '@/hooks/use-leads-filters';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedAuth } from '@/contexts/unified-auth-context';
