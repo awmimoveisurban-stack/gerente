@@ -32,7 +32,7 @@ const KanbanEnhanced = lazy(() => import('@/pages/kanban-enhanced'));
 const Relatorios = lazy(() => import('@/pages/relatorios'));
 const GerenteRelatorios = lazy(() => import('@/pages/gerente-relatorios-v3')); // ✅ PÁGINA PADRONIZADA
 const GerenteEquipe = lazy(() => import('@/pages/gerente-equipe-v3')); // ✅ PÁGINA PADRONIZADA
-const TodosLeads = lazy(() => import('@/pages/todos-leads-v3')); // ✅ PÁGINA PADRONIZADA
+const TodosLeads = lazy(() => import('@/pages/todos-leads-v3-simple')); // ✅ PÁGINA PADRONIZADA
 const NotificationsPage = lazy(() => import('@/pages/notifications'));
 const EvolutionWhatsAppAuto = lazy(() => import('@/pages/evolution-whatsapp-v3')); // ✅ PÁGINA PADRONIZADA
 const TestNotifications = lazy(() => import('@/pages/test-notifications'));

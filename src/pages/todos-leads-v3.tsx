@@ -1,23 +1,12 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ManagerRoute } from '@/components/layout/auth-middleware';
 // ✅ IMPORTAÇÕES PADRONIZADAS BASEADAS NAS IMAGENS
 import {
   StandardPageLayout,
   StandardHeader,
-  StandardDashboardCard,
-  StandardDashboardGrid,
-  StandardDashboardContainer,
-  DASHBOARD_COLORS,
-  DASHBOARD_ANIMATIONS,
-  useDashboardAnimations,
 } from '@/components/layout/standard-layout';
-import { useEvolutionPollingDireto } from '@/hooks/use-evolution-polling-direto';
-import { useAutoAssignLeads } from '@/hooks/use-auto-assign-leads';
 import { useCorretores } from '@/hooks/use-corretores';
-import { LeadsNaoDirecionados } from '@/components/crm/leads-nao-direcionados';
-import { MonitorLigacoes } from '@/components/crm/monitor-ligacoes';
 import { LeadDetailsModal } from '@/components/crm/lead-details-modal';
 import { WhatsAppMessageModal } from '@/components/crm/whatsapp-message-modal';
 import { EditLeadModal } from '@/components/crm/edit-lead-modal';
@@ -434,6 +423,9 @@ export default function TodosLeadsV3() {
       .replace(/on\w+\s*=/gi, '') // Remove event handlers
       .trim();
   };
+
+  // ✅ AÇÕES RÁPIDAS COM VALIDAÇÕES DE SEGURANÇA
+  const handleQuickAssign = async (lead: Lead) => {
     if (!validateLeadModification(lead, 'assign')) return;
     
     try {
@@ -562,11 +554,7 @@ export default function TodosLeadsV3() {
         }
       >
         {/* ✅ MÉTRICAS GLOBAIS EXATAS DO DASHBOARD */}
-        <motion.div
-          initial={DASHBOARD_ANIMATIONS.pageInitial}
-          animate={DASHBOARD_ANIMATIONS.pageAnimate}
-          transition={{ delay: 0.1 }}
-        >
+        <div>
           <StandardDashboardGrid columns="4">
             <StandardDashboardCard
               title="Total de Leads"
@@ -601,29 +589,20 @@ export default function TodosLeadsV3() {
               trend={calculateRealTrends.corretoresAtivosTrend}
             />
           </StandardDashboardGrid>
-        </motion.div>
+        </div>
 
         {/* ✅ COMPONENTES ESPECÍFICOS PARA GERENTE - LAYOUT DAS IMAGENS */}
-        <motion.div
-          initial={DASHBOARD_ANIMATIONS.pageInitial}
-          animate={DASHBOARD_ANIMATIONS.pageAnimate}
-          transition={{ delay: 0.15 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <LeadsNaoDirecionados 
             leads={leads || []}
             corretores={corretores || []}
             onLeadAtribuido={() => refetch()}
           />
           <MonitorLigacoes />
-        </motion.div>
+        </div>
 
         {/* ✅ FILTROS E BUSCA - LAYOUT LIMPO COMO DASHBOARD */}
-        <motion.div
-          initial={DASHBOARD_ANIMATIONS.pageInitial}
-          animate={DASHBOARD_ANIMATIONS.pageAnimate}
-          transition={{ delay: 0.2 }}
-        >
+        <div>
           <Card className="border border-gray-200 rounded-2xl shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
@@ -692,14 +671,10 @@ export default function TodosLeadsV3() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* ✅ TABELA DE LEADS - LAYOUT LIMPO COMO DASHBOARD */}
-        <motion.div
-          initial={DASHBOARD_ANIMATIONS.pageInitial}
-          animate={DASHBOARD_ANIMATIONS.pageAnimate}
-          transition={{ delay: 0.3 }}
-        >
+        <div>
           <Card className="border border-gray-200 rounded-2xl shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
@@ -795,7 +770,7 @@ export default function TodosLeadsV3() {
                       <option value="all">Todos</option>
                       <option value="high">Alto (80+)</option>
                       <option value="medium">Médio (50-79)</option>
-                      <option value="low">Baixo (<50)</option>
+                      <option value="low">Baixo (&lt;50)</option>
                     </select>
                   </div>
 
@@ -1024,7 +999,7 @@ export default function TodosLeadsV3() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* ✅ MODAIS */}
         <AddLeadModal
