@@ -304,6 +304,21 @@ export default function TodosLeadsV3() {
           </StandardDashboardGrid>
         </motion.div>
 
+        {/* ✅ COMPONENTES ESPECÍFICOS PARA GERENTE - LAYOUT DAS IMAGENS */}
+        <motion.div
+          initial={DASHBOARD_ANIMATIONS.pageInitial}
+          animate={DASHBOARD_ANIMATIONS.pageAnimate}
+          transition={{ delay: 0.15 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
+          <LeadsNaoDirecionados 
+            leads={leads || []}
+            corretores={corretores || []}
+            onLeadAtribuido={() => refetch()}
+          />
+          <MonitorLigacoes />
+        </motion.div>
+
         {/* ✅ FILTROS E BUSCA - LAYOUT LIMPO COMO DASHBOARD */}
         <motion.div
           initial={DASHBOARD_ANIMATIONS.pageInitial}
