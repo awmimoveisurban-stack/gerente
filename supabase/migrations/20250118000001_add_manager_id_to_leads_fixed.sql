@@ -176,6 +176,22 @@ BEGIN
     END IF;
 END $$;
 
+-- 11. Adicionar last_interaction_at (se não existir)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'last_interaction_at' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE public.leads ADD COLUMN last_interaction_at TIMESTAMPTZ DEFAULT NOW();
+        COMMENT ON COLUMN public.leads.last_interaction_at IS 'Data da última interação com o lead';
+        CREATE INDEX IF NOT EXISTS idx_leads_last_interaction_at ON public.leads(last_interaction_at);
+        RAISE NOTICE '✅ Adicionada coluna last_interaction_at';
+    ELSE
+        RAISE NOTICE 'ℹ️ Coluna last_interaction_at já existe';
+    END IF;
+END $$;
+
 -- ============================================================================
 -- VERIFICAÇÃO FINAL
 -- ============================================================================
@@ -209,6 +225,7 @@ BEGIN
     RAISE NOTICE '   ✅ origem: Adicionado';
     RAISE NOTICE '   ✅ mensagem_inicial: Adicionado';
     RAISE NOTICE '   ✅ data_contato: Adicionado';
+    RAISE NOTICE '   ✅ last_interaction_at: Adicionado';
     RAISE NOTICE '';
     RAISE NOTICE '🔧 SISTEMA COMPATÍVEL:';
     RAISE NOTICE '   - user_id continua funcionando normalmente';
