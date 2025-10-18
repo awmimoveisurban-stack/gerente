@@ -108,8 +108,27 @@ export default function TodosLeadsV3() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // ✅ USAR HOOK PADRONIZADO
-  const { isRefreshing, handleRefresh } = useStandardLayout();
+  // ✅ ESTADO DE REFRESH SIMPLES
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const handleRefresh = useCallback(async (refetchFn: () => Promise<void>, toastFn: any) => {
+    try {
+      setIsRefreshing(true);
+      await refetchFn();
+      toastFn({
+        title: "✅ Dados Atualizados",
+        description: "Os dados foram atualizados com sucesso",
+      });
+    } catch (error) {
+      toastFn({
+        title: "❌ Erro ao Atualizar",
+        description: "Não foi possível atualizar os dados",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
 
   // Estados dos modais
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
