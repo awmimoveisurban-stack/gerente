@@ -274,7 +274,7 @@ export default function LeadsV3() {
           />
           <StandardMetricCard
             title="Valor Total"
-            value={`R$ ${personalMetrics.valorTotal.toLocaleString()}`}
+            value={`R$ ${(personalMetrics.valorTotal || 0).toLocaleString()}`}
             subtitle="Potencial de vendas"
             icon={DollarSign}
             color="info"

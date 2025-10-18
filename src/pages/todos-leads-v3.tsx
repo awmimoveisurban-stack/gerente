@@ -201,7 +201,7 @@ export default function TodosLeadsV3() {
     },
     {
       icon: <DollarSign className="h-3 w-3" />,
-      text: `R$ ${metrics?.valorTotal?.toLocaleString() || '0'}`,
+      text: `R$ ${(metrics?.valorTotal || 0).toLocaleString()}`,
     },
   ];
 

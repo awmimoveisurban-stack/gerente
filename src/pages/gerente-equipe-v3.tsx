@@ -251,7 +251,7 @@ export default function GerenteEquipe() {
           />
           <StandardMetricCard
             title="Valor Vendido"
-            value={`R$ ${metrics.valorTotalVendido.toLocaleString()}`}
+            value={`R$ ${(metrics.valorTotalVendido || 0).toLocaleString()}`}
             icon={<DollarSign className="h-6 w-6 text-white" />}
             color={STANDARD_COLORS.orange}
           />

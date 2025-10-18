@@ -123,8 +123,8 @@ export default function GerenteRelatorios() {
       csv += `Total de Leads: ${totalLeads}\n`;
       csv += `Leads Fechados: ${leadsFechados}\n`;
       csv += `Taxa de Conversão: ${taxaConversao}%\n`;
-      csv += `Valor Total Vendido: R$ ${valorTotalVendas.toLocaleString()}\n`;
-      csv += `Ticket Médio: R$ ${ticketMedio.toLocaleString()}\n\n`;
+      csv += `Valor Total Vendido: R$ ${(valorTotalVendas || 0).toLocaleString()}\n`;
+      csv += `Ticket Médio: R$ ${(ticketMedio || 0).toLocaleString()}\n\n`;
       
       csv += '📊 DISTRIBUIÇÃO POR STATUS\n';
       Object.entries(leadsPorStatus).forEach(([status, count]) => {
@@ -195,7 +195,7 @@ export default function GerenteRelatorios() {
     },
     {
       icon: <DollarSign className="h-3 w-3" />,
-      text: `R$ ${valorTotalVendas.toLocaleString()}`,
+      text: `R$ ${(valorTotalVendas || 0).toLocaleString()}`,
     },
   ];
 
@@ -234,7 +234,7 @@ export default function GerenteRelatorios() {
           />
           <StandardMetricCard
             title="Valor Vendido"
-            value={`R$ ${valorTotalVendas.toLocaleString()}`}
+            value={`R$ ${(valorTotalVendas || 0).toLocaleString()}`}
             icon={<DollarSign className="h-6 w-6 text-white" />}
             color={STANDARD_COLORS.orange}
           />
@@ -388,13 +388,13 @@ export default function GerenteRelatorios() {
                   <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
                     <h3 className="font-semibold">Ticket Médio</h3>
-                    <p className="text-2xl font-bold text-green-600">R$ {ticketMedio.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-green-600">R$ {(ticketMedio || 0).toLocaleString()}</p>
                     <p className="text-xs text-gray-500">Por venda</p>
                   </div>
                   <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
                     <h3 className="font-semibold">Pipeline</h3>
-                    <p className="text-2xl font-bold text-purple-600">R$ {valorTotalPipeline.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-purple-600">R$ {(valorTotalPipeline || 0).toLocaleString()}</p>
                     <p className="text-xs text-gray-500">Em negociação</p>
                   </div>
                 </div>

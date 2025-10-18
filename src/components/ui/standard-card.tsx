@@ -159,10 +159,10 @@ export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
               className="w-16 h-16 rounded-2xl flex items-center justify-center ml-4"
               style={{ backgroundColor: `${cardColor}15` }}
             >
-              <Icon 
-                className="h-8 w-8" 
-                style={{ color: cardColor }}
-              />
+              {React.createElement(Icon, {
+                className: "h-8 w-8",
+                style: { color: cardColor }
+              })}
             </div>
           </div>
         </CardContent>
@@ -213,10 +213,10 @@ export const StandardContentCard: React.FC<StandardContentCardProps> = ({
                 className="p-2 rounded-xl"
                 style={{ backgroundColor: `${cardColor}20` }}
               >
-                <Icon 
-                  className="h-5 w-5" 
-                  style={{ color: cardColor }}
-                />
+                {React.createElement(Icon, {
+                  className: "h-5 w-5",
+                  style: { color: cardColor }
+                })}
             </div>
             )}
             <div>
@@ -328,10 +328,10 @@ export const StandardStatCard: React.FC<StandardStatCardProps> = ({
               className="p-3 rounded-xl"
               style={{ backgroundColor: `${cardColor}20` }}
             >
-              <Icon 
-                className="h-6 w-6" 
-                style={{ color: cardColor }}
-              />
+              {React.createElement(Icon, {
+                className: "h-6 w-6",
+                style: { color: cardColor }
+              })}
             </div>
           </div>
         </CardContent>

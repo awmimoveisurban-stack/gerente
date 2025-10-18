@@ -99,8 +99,8 @@ export default function GerentePerformance() {
         p.leads_convertidos,
         `${p.taxa_conversao.toFixed(1)}%`,
         p.score_qualidade,
-        `R$ ${p.valor_vendido.toLocaleString()}`,
-        `R$ ${p.ticket_medio.toLocaleString()}`
+        `R$ ${(p.valor_vendido || 0).toLocaleString()}`,
+        `R$ ${(p.ticket_medio || 0).toLocaleString()}`
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -189,7 +189,7 @@ export default function GerentePerformance() {
     },
     {
       icon: <DollarSign className="h-3 w-3" />,
-      text: `R$ ${metrics?.valorTotalVendido?.toLocaleString() || '0'}`,
+      text: `R$ ${(metrics?.valorTotalVendido || 0).toLocaleString()}`,
     },
   ];
 
@@ -235,7 +235,7 @@ export default function GerentePerformance() {
             />
             <StandardMetricCard
               title="Valor Total Vendido"
-              value={`R$ ${metrics.valorTotalVendido.toLocaleString()}`}
+              value={`R$ ${(metrics.valorTotalVendido || 0).toLocaleString()}`}
               subtitle="Receita gerada"
               icon={DollarSign}
               color="success"
@@ -325,7 +325,7 @@ export default function GerentePerformance() {
                       <div className="text-center">
                         <p className="text-sm text-gray-500 dark:text-gray-400">Valor</p>
                         <p className="font-semibold text-green-600">
-                          R$ {performance.valor_vendido.toLocaleString()}
+                          R$ {(performance.valor_vendido || 0).toLocaleString()}
                         </p>
                       </div>
                       <Button
