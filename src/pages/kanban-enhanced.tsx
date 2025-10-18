@@ -20,6 +20,12 @@ import { CallLeadModal } from '@/components/crm/call-lead-modal';
 import { EmailLeadModal } from '@/components/crm/email-lead-modal';
 import { ScheduleVisitModal } from '@/components/crm/schedule-visit-modal';
 import { ReassignLeadModal } from '@/components/crm/reassign-lead-modal';
+// ✅ COMPONENTES KANBAN NECESSÁRIOS
+import { KanbanAlerts } from '@/components/crm/kanban-alerts';
+import { KanbanBottlenecks } from '@/components/crm/kanban-bottlenecks';
+import { KanbanCorretorRanking } from '@/components/crm/kanban-corretor-ranking';
+import { KanbanExtendedMetrics } from '@/components/crm/kanban-extended-metrics';
+import { KanbanSummary } from '@/components/crm/kanban-summary';
 import { useLeads, type Lead } from '@/hooks/use-leads';
 import { useKanbanMetrics } from '@/hooks/use-kanban-metrics';
 import { useUnifiedRoles } from '@/hooks/use-unified-roles';
@@ -325,8 +331,8 @@ export default function KanbanEnhanced() {
         header={
           <StandardHeader
             title="Quadro Kanban"
-            subtitle="Gerencie seus leads com visualização em colunas"
-            icon={LayoutGrid}
+            description="Gerencie seus leads com visualização em colunas"
+            icon={<LayoutGrid className="h-6 w-6 text-white" />}
             actions={headerActions}
             gradient="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800"
           />
@@ -349,8 +355,8 @@ export default function KanbanEnhanced() {
       header={
         <StandardHeader
           title="Quadro Kanban"
-          subtitle="Gerencie seus leads com visualização em colunas"
-          icon={LayoutGrid}
+          description="Gerencie seus leads com visualização em colunas"
+          icon={<LayoutGrid className="h-6 w-6 text-white" />}
           actions={headerActions}
           gradient="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800"
         />
