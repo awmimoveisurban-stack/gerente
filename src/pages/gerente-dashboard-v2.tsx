@@ -18,6 +18,26 @@ import { ManagerRoute } from '@/components/layout/auth-middleware';
 import { AILeadIndicators } from '@/components/ui/ai-indicators';
 import { AITooltip } from '@/components/ui/ai-tooltip';
 import {
+  ProbabilityIndicator,
+  UrgencyIndicator,
+  NextActionIndicator,
+  TimeInPipelineIndicator,
+  PreferredChannelIndicator,
+  SentimentIndicator,
+  BudgetRangeIndicator,
+} from '@/components/ui/advanced-ai-indicators';
+import {
+  calcularProbabilidadeFechamento,
+  calcularUrgencia,
+  sugerirProximaAcao,
+  calcularTempoNoPipeline,
+  determinarCanalPreferido,
+  analisarSentimento,
+  determinarFaixaPreco,
+  formatarDataRelativa,
+  type LeadCompleto,
+} from '@/utils/lead-intelligence';
+import {
   Users,
   TrendingUp,
   Target,
@@ -610,77 +630,146 @@ export default function GerenteDashboardV2() {
               </div>
             ) : (
               <div className='divide-y divide-gray-100 dark:divide-gray-800'>
-                {filteredLeadsRecentes.slice(0, 5).map((lead, index) => (
-                  <motion.div
-                    key={lead.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className='p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'
-                  >
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center gap-4'>
-                        <div className='relative'>
-                          <div className='w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg'>
-                            {lead.nome?.charAt(0).toUpperCase() || '?'}
-                          </div>
-                          {lead.score && lead.score >= 80 && (
-                            <div className='absolute -top-1 -right-1'>
-                              <Star className='h-5 w-5 text-yellow-500 fill-current' />
-                            </div>
-                          )}
-                        </div>
+                {filteredLeadsRecentes.slice(0, 5).map((lead, index) => {
+                  // ✅ CONVERTER LEAD PARA LeadCompleto
+                  const leadCompleto: LeadCompleto = {
+                    id: lead.id,
+                    nome: lead.nome,
+                    corretor: lead.corretor,
+                    status: lead.status,
+                    valor: lead.valor,
+                    created_at: lead.created_at,
+                    score: lead.score || null,
+                    origem: lead.origem || null,
+                    observacoes: (lead as any).observacoes || null,
+                    mensagem_inicial: (lead as any).mensagem_inicial || null,
+                    prioridade: (lead as any).prioridade || null,
+                    cidade: (lead as any).cidade || null,
+                    interesse: (lead as any).interesse || null,
+                    last_interaction_at: (lead as any).last_interaction_at || null,
+                    telefone: (lead as any).telefone || null,
+                    email: (lead as any).email || null,
+                    orcamento: (lead as any).orcamento || null,
+                    valor_interesse: (lead as any).valor_interesse || null,
+                  };
 
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-2 mb-2'>
-                            <h4 className='font-semibold text-gray-900 dark:text-white'>
+                  // ✅ CALCULAR MÉTRICAS INTELIGENTES
+                  const probabilidade = calcularProbabilidadeFechamento(leadCompleto);
+                  const urgencia = calcularUrgencia(leadCompleto);
+                  const proximaAcao = sugerirProximaAcao(leadCompleto);
+                  const tempoNoPipeline = calcularTempoNoPipeline(leadCompleto.created_at);
+                  const canalPreferido = determinarCanalPreferido(leadCompleto);
+                  const sentimento = analisarSentimento(leadCompleto);
+                  const faixaPreco = determinarFaixaPreco(leadCompleto);
+
+                  return (
+                    <motion.div
+                      key={lead.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className='p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'
+                    >
+                      {/* 🎯 LINHA 1: IDENTIFICAÇÃO + QUALIFICAÇÃO + URGÊNCIA */}
+                      <div className='flex items-center justify-between mb-4'>
+                        {/* Identificação */}
+                        <div className='flex items-center gap-3'>
+                          <div className='relative'>
+                            <div className='w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg'>
+                              {lead.nome?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            {lead.score && lead.score >= 80 && (
+                              <div className='absolute -top-1 -right-1'>
+                                <Star className='h-5 w-5 text-yellow-500 fill-current' />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <h4 className='font-semibold text-gray-900 dark:text-white text-lg'>
                               {lead.nome}
                             </h4>
-                            {/* ✅ INDICADORES IA MELHORADOS COM TOOLTIP */}
-                            <AITooltip lead={lead as any}>
-                              <AILeadIndicators 
-                                score={lead.score} 
-                                priority={(lead as any).prioridade} 
-                                origin={lead.origem}
-                                size="sm"
-                              />
-                            </AITooltip>
+                            <p className='text-sm text-gray-500 dark:text-gray-400'>
+                              {lead.origem || 'Origem não informada'} • {lead.corretor}
+                            </p>
                           </div>
-                          
-                          <div className='grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400'>
-                            <div className='flex items-center gap-1'>
-                              <UserCheck className='h-3 w-3' />
-                              <span className='truncate'>{lead.corretor}</span>
-                            </div>
-                            <div className='flex items-center gap-1'>
-                              <Calendar className='h-3 w-3' />
-                              <span>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                          </div>
+                        </div>
+                        
+                        {/* Qualificação IA */}
+                        <div className='flex items-center gap-2'>
+                          <ProbabilityIndicator 
+                            probability={probabilidade} 
+                            size="sm" 
+                            showLabel={true}
+                          />
+                          <UrgencyIndicator 
+                            urgency={urgencia} 
+                            size="sm" 
+                            showLabel={true}
+                          />
                         </div>
                       </div>
 
-                      <div className='text-right'>
-                        <p className='font-bold text-green-600 dark:text-green-400 mb-2'>
-                          {lead.valor && lead.valor > 0 
-                            ? `R$ ${lead.valor.toLocaleString('pt-BR')}`
-                            : 'Valor não informado'
-                          }
-                        </p>
-                        <Badge variant='outline' className='mb-1'>
-                          {lead.status}
-                        </Badge>
-                        {/* ✅ INFORMAÇÕES ADICIONAIS */}
-                        {(lead as any).cidade && (
-                          <div className='flex items-center gap-1 text-xs text-gray-500 mt-1'>
-                            <MapPin className='h-3 w-3' />
-                            <span>{(lead as any).cidade}</span>
+                      {/* 🎯 LINHA 2: STATUS + HISTÓRICO + AÇÃO */}
+                      <div className='flex items-center justify-between mb-4'>
+                        {/* Status e Histórico */}
+                        <div className='flex items-center gap-4'>
+                          <Badge variant='outline' className='text-sm'>
+                            {lead.status}
+                          </Badge>
+                          <div className='flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400'>
+                            <Clock className='h-3 w-3' />
+                            <span>Última: {formatarDataRelativa(leadCompleto.last_interaction_at)}</span>
                           </div>
-                        )}
+                        </div>
+                        
+                        {/* Ação e Tempo */}
+                        <div className='flex items-center gap-2'>
+                          <NextActionIndicator 
+                            action={proximaAcao} 
+                            size="sm" 
+                            showLabel={true}
+                          />
+                          <TimeInPipelineIndicator 
+                            days={tempoNoPipeline} 
+                            size="sm" 
+                            showLabel={true}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+
+                      {/* 🎯 LINHA 3: FINANCEIRO + COMUNICAÇÃO + SENTIMENTO */}
+                      <div className='flex items-center justify-between'>
+                        {/* Financeiro */}
+                        <div className='flex items-center gap-4'>
+                          <div className='text-lg font-bold text-green-600 dark:text-green-400'>
+                            {leadCompleto.valor && leadCompleto.valor > 0
+                              ? `R$ ${leadCompleto.valor.toLocaleString('pt-BR')}`
+                              : 'Valor não informado'}
+                          </div>
+                          <BudgetRangeIndicator 
+                            range={faixaPreco} 
+                            size="sm" 
+                            showLabel={true}
+                          />
+                        </div>
+                        
+                        {/* Comunicação e Sentimento */}
+                        <div className='flex items-center gap-4'>
+                          <PreferredChannelIndicator 
+                            channel={canalPreferido} 
+                            size="sm" 
+                            showLabel={true}
+                          />
+                          <SentimentIndicator 
+                            sentiment={sentimento} 
+                            size="sm" 
+                            showLabel={true}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

@@ -40,6 +40,11 @@ export interface LeadRecente {
   prioridade?: string | null;
   cidade?: string | null;
   interesse?: string | null;
+  last_interaction_at?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  orcamento?: number | null;
+  valor_interesse?: number | null;
 }
 
 export const useDashboard = () => {

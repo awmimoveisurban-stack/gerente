@@ -40,10 +40,31 @@ import {
   Clock,
   Brain,
   Target,
+  Avatar,
 } from 'lucide-react';
 import { type Lead } from '@/hooks/use-leads';
 import { AILeadIndicators } from '@/components/ui/ai-indicators';
 import { AITooltip } from '@/components/ui/ai-tooltip';
+import {
+  ProbabilityIndicator,
+  UrgencyIndicator,
+  NextActionIndicator,
+  TimeInPipelineIndicator,
+  PreferredChannelIndicator,
+  SentimentIndicator,
+  BudgetRangeIndicator,
+} from '@/components/ui/advanced-ai-indicators';
+import {
+  calcularProbabilidadeFechamento,
+  calcularUrgencia,
+  sugerirProximaAcao,
+  calcularTempoNoPipeline,
+  determinarCanalPreferido,
+  analisarSentimento,
+  determinarFaixaPreco,
+  formatarDataRelativa,
+  type LeadCompleto,
+} from '@/utils/lead-intelligence';
 
 interface RecentLeadsTableProps {
   leads: Lead[];
@@ -157,99 +178,131 @@ const LeadRow = memo(function LeadRow({
     [lead, onScheduleVisit]
   );
 
+  // ✅ CONVERTER LEAD PARA LeadCompleto
+  const leadCompleto: LeadCompleto = {
+    id: lead.id,
+    nome: lead.nome,
+    corretor: lead.corretor || 'Não atribuído',
+    status: lead.status,
+    valor: lead.valor_interesse || lead.orcamento || null,
+    created_at: lead.data_entrada,
+    score: lead.score_ia || lead.score || null,
+    origem: lead.origem || null,
+    observacoes: lead.observacoes || null,
+    mensagem_inicial: lead.mensagem_inicial || null,
+    prioridade: lead.prioridade || null,
+    cidade: lead.cidade || null,
+    interesse: lead.imovel_interesse || lead.interesse || null,
+    last_interaction_at: lead.ultima_interacao || null,
+    telefone: lead.telefone || null,
+    email: lead.email || null,
+    orcamento: lead.orcamento || null,
+    valor_interesse: lead.valor_interesse || null,
+  };
+
+  // ✅ CALCULAR MÉTRICAS INTELIGENTES
+  const probabilidade = calcularProbabilidadeFechamento(leadCompleto);
+  const urgencia = calcularUrgencia(leadCompleto);
+  const proximaAcao = sugerirProximaAcao(leadCompleto);
+  const tempoNoPipeline = calcularTempoNoPipeline(leadCompleto.created_at);
+  const canalPreferido = determinarCanalPreferido(leadCompleto);
+  const sentimento = analisarSentimento(leadCompleto);
+  const faixaPreco = determinarFaixaPreco(leadCompleto);
+
   return (
     <TableRow className='border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors'>
-      <TableCell className='font-medium'>
-        <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold'>
-            {lead.nome.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div className='font-semibold text-gray-900 dark:text-white'>
-              {lead.nome}
+      <TableCell colSpan={6} className='p-4'>
+        {/* 🎯 LINHA 1: IDENTIFICAÇÃO + QUALIFICAÇÃO + URGÊNCIA */}
+        <div className='flex items-center justify-between mb-3'>
+          {/* Identificação */}
+          <div className='flex items-center gap-3'>
+            <Avatar className='w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm font-bold'>
+              {lead.nome.charAt(0).toUpperCase()}
+            </Avatar>
+            <div>
+              <h4 className='font-semibold text-gray-900 dark:text-white text-base'>
+                {lead.nome}
+              </h4>
+              <p className='text-sm text-gray-500 dark:text-gray-400'>
+                {lead.origem || 'Origem não informada'}
+              </p>
             </div>
-            <div className='text-sm text-gray-500 dark:text-gray-400'>
-              {lead.email || 'Sem email'}
-            </div>
           </div>
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className='space-y-2'>
+          
+          {/* Qualificação IA */}
           <div className='flex items-center gap-2'>
-            <Phone className='h-4 w-4 text-blue-500' />
-            <span className='text-gray-700 dark:text-gray-300 text-sm'>
-              {lead.telefone || 'Sem telefone'}
-            </span>
-          </div>
-          {lead.email && (
-            <div className='flex items-center gap-2'>
-              <MessageSquare className='h-3 w-3 text-green-500' />
-              <span className='text-xs text-gray-500 dark:text-gray-400'>
-                WhatsApp disponível
-              </span>
-            </div>
-          )}
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className='space-y-2'>
-          <div className='max-w-[180px] truncate bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300'>
-            {lead.imovel_interesse || lead.interesse || 'Não especificado'}
-          </div>
-          {/* ✅ CIDADE DE INTERESSE */}
-          {lead.cidade && (
-            <div className='flex items-center gap-1'>
-              <MapPin className='h-3 w-3 text-gray-500' />
-              <span className='text-xs text-gray-500 dark:text-gray-400'>
-                {lead.cidade}
-              </span>
-            </div>
-          )}
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className='space-y-2'>
-          <div className='font-semibold text-gray-900 dark:text-white text-sm'>
-            {lead.valor_interesse || lead.orcamento
-              ? `R$ ${(lead.valor_interesse || lead.orcamento || 0).toLocaleString('pt-BR')}`
-              : 'Não informado'}
-          </div>
-          {/* ✅ INDICADORES IA MELHORADOS COM TOOLTIP */}
-          <AITooltip lead={lead}>
-            <AILeadIndicators 
-              score={lead.score_ia} 
-              priority={lead.prioridade} 
-              origin={lead.origem}
-              size="sm"
+            <ProbabilityIndicator 
+              probability={probabilidade} 
+              size="sm" 
+              showLabel={true}
             />
-          </AITooltip>
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className='space-y-2'>
-          <StatusBadge status={getStatusBadgeStatus(lead.status)} />
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className='space-y-1'>
-          <div className='text-sm text-gray-600 dark:text-gray-400'>
-            {lead.ultima_interacao
-              ? new Date(lead.ultima_interacao).toLocaleDateString('pt-BR')
-              : new Date(lead.data_entrada).toLocaleDateString('pt-BR')}
-          </div>
-          <div className='text-xs text-gray-500 dark:text-gray-400'>
-            {lead.ultima_interacao
-              ? new Date(lead.ultima_interacao).toLocaleTimeString('pt-BR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : 'Primeiro contato'}
+            <UrgencyIndicator 
+              urgency={urgencia} 
+              size="sm" 
+              showLabel={true}
+            />
           </div>
         </div>
-      </TableCell>
-      <TableCell className='text-right'>
-        <div className='flex items-center gap-2'>
+
+        {/* 🎯 LINHA 2: STATUS + HISTÓRICO + AÇÃO */}
+        <div className='flex items-center justify-between mb-3'>
+          {/* Status e Histórico */}
+          <div className='flex items-center gap-4'>
+            <StatusBadge status={getStatusBadgeStatus(lead.status)} />
+            <div className='flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400'>
+              <Clock className='h-3 w-3' />
+              <span>Última: {formatarDataRelativa(leadCompleto.last_interaction_at)}</span>
+            </div>
+          </div>
+          
+          {/* Ação e Tempo */}
+          <div className='flex items-center gap-2'>
+            <NextActionIndicator 
+              action={proximaAcao} 
+              size="sm" 
+              showLabel={true}
+            />
+            <TimeInPipelineIndicator 
+              days={tempoNoPipeline} 
+              size="sm" 
+              showLabel={true}
+            />
+          </div>
+        </div>
+
+        {/* 🎯 LINHA 3: FINANCEIRO + COMUNICAÇÃO + SENTIMENTO */}
+        <div className='flex items-center justify-between'>
+          {/* Financeiro */}
+          <div className='flex items-center gap-4'>
+            <div className='text-sm font-semibold text-gray-900 dark:text-white'>
+              {leadCompleto.valor && leadCompleto.valor > 0
+                ? `R$ ${leadCompleto.valor.toLocaleString('pt-BR')}`
+                : 'Valor não informado'}
+            </div>
+            <BudgetRangeIndicator 
+              range={faixaPreco} 
+              size="sm" 
+              showLabel={true}
+            />
+          </div>
+          
+          {/* Comunicação e Sentimento */}
+          <div className='flex items-center gap-4'>
+            <PreferredChannelIndicator 
+              channel={canalPreferido} 
+              size="sm" 
+              showLabel={true}
+            />
+            <SentimentIndicator 
+              sentiment={sentimento} 
+              size="sm" 
+              showLabel={true}
+            />
+          </div>
+        </div>
+
+        {/* 🎯 AÇÕES RÁPIDAS */}
+        <div className='flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800'>
           <Button
             variant='ghost'
             size='sm'
@@ -331,10 +384,10 @@ export const RecentLeadsTable = memo(function RecentLeadsTable({
               <div className='p-1.5 bg-blue-500 rounded-lg'>
                 <Brain className='h-4 w-4 text-white' />
               </div>
-              Leads Recentes com IA ({leads.length})
+              Leads Recentes com IA Avançada ({leads.length})
             </CardTitle>
             <CardDescription className='text-blue-600 dark:text-blue-400 mt-1'>
-              🤖 Leads qualificados automaticamente com score, prioridade e análise contextual
+              🎯 Layout inteligente com probabilidade, urgência, próxima ação e análise contextual completa
             </CardDescription>
           </div>
           <Button
@@ -355,25 +408,7 @@ export const RecentLeadsTable = memo(function RecentLeadsTable({
             <TableHeader>
               <TableRow className='border-gray-200 dark:border-gray-700'>
                 <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  👤 Cliente
-                </TableHead>
-                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  📞 Contato & Origem
-                </TableHead>
-                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  🏠 Interesse & Localização
-                </TableHead>
-                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  💰 Valor & Score IA
-                </TableHead>
-                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  📊 Status & Prioridade
-                </TableHead>
-                <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  📅 Última Interação
-                </TableHead>
-                <TableHead className='text-right font-semibold text-gray-700 dark:text-gray-300'>
-                  ⚡ Ações
+                  🎯 Leads com IA Avançada
                 </TableHead>
               </TableRow>
             </TableHeader>
