@@ -2,6 +2,17 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ManagerRoute } from '@/components/layout/auth-middleware';
+// ✅ IMPORTAÇÕES PADRONIZADAS BASEADAS NAS IMAGENS
+import {
+  StandardPageLayout,
+  StandardHeader,
+  StandardDashboardCard,
+  StandardDashboardGrid,
+  StandardDashboardContainer,
+  DASHBOARD_COLORS,
+  DASHBOARD_ANIMATIONS,
+  useDashboardAnimations,
+} from '@/components/layout/standard-layout';
 import { useEvolutionPollingDireto } from '@/hooks/use-evolution-polling-direto';
 import { useAutoAssignLeads } from '@/hooks/use-auto-assign-leads';
 import { useCorretores } from '@/hooks/use-corretores';
@@ -231,84 +242,78 @@ export default function TodosLeadsV3() {
           />
         }
       >
-        {/* ✅ MÉTRICAS GLOBAIS PADRONIZADAS */}
-        <StandardGrid columns="4">
-          <StandardMetricCard
-            title="Total de Leads"
-            value={metrics?.totalLeads || 0}
-            subtitle="Todos os leads"
-            icon={Users}
-            color="purple"
-            trend={{
-              value: 12,
-              isPositive: true,
-              period: "este mês"
-            }}
-          />
-          <StandardMetricCard
-            title="Leads Fechados"
-            value={metrics?.leadsConvertidos || 0}
-            subtitle="Vendas concluídas"
-            icon={Target}
-            color="success"
-            trend={{
-              value: 8,
-              isPositive: true,
-              period: "esta semana"
-            }}
-          />
-          <StandardMetricCard
-            title="Taxa de Conversão"
-            value={`${metrics?.taxaConversao?.toFixed(1) || '0.0'}%`}
-            subtitle="Performance geral"
-            icon={TrendingUp}
-            color="orange"
-            trend={{
-              value: 3,
-              isPositive: true,
-              period: "vs mês anterior"
-            }}
-          />
-          <StandardMetricCard
-            title="Corretores Ativos"
-            value={corretores?.length || 0}
-            subtitle="Equipe trabalhando"
-            icon={Users}
-            color="info"
-            trend={{
-              value: 2,
-              isPositive: true,
-              period: "novos este mês"
-            }}
-          />
-        </StandardGrid>
-
-        {/* ✅ COMPONENTES ESPECÍFICOS PARA GERENTE */}
+        {/* ✅ MÉTRICAS GLOBAIS EXATAS DO DASHBOARD */}
         <motion.div
-          initial={STANDARD_ANIMATIONS.pageInitial}
-          animate={STANDARD_ANIMATIONS.pageAnimate}
+          initial={DASHBOARD_ANIMATIONS.pageInitial}
+          animate={DASHBOARD_ANIMATIONS.pageAnimate}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
-          <LeadsNaoDirecionados 
-            leads={leads || []}
-            corretores={corretores || []}
-            onLeadAtribuido={() => refetch()}
-          />
-          <MonitorLigacoes />
+          <StandardDashboardGrid columns="4">
+            <StandardDashboardCard
+              title="Total de Leads"
+              value={metrics?.totalLeads || 0}
+              subtitle="Todos os leads"
+              icon={Users}
+              color="primary"
+              trend={{
+                value: 12,
+                label: "este mês",
+                positive: true
+              }}
+            />
+            <StandardDashboardCard
+              title="Leads Fechados"
+              value={metrics?.leadsConvertidos || 0}
+              subtitle="Vendas concluídas"
+              icon={Target}
+              color="success"
+              trend={{
+                value: 8,
+                label: "esta semana",
+                positive: true
+              }}
+            />
+            <StandardDashboardCard
+              title="Taxa de Conversão"
+              value={`${metrics?.taxaConversao?.toFixed(1) || '0.0'}%`}
+              subtitle="Performance geral"
+              icon={TrendingUp}
+              color="warning"
+              trend={{
+                value: 3,
+                label: "vs mês anterior",
+                positive: true
+              }}
+            />
+            <StandardDashboardCard
+              title="Corretores Ativos"
+              value={corretores?.length || 0}
+              subtitle="Equipe trabalhando"
+              icon={Users}
+              color="info"
+              trend={{
+                value: 2,
+                label: "novos este mês",
+                positive: true
+              }}
+            />
+          </StandardDashboardGrid>
         </motion.div>
 
-        {/* ✅ FILTROS E BUSCA */}
+        {/* ✅ FILTROS E BUSCA - LAYOUT LIMPO COMO DASHBOARD */}
         <motion.div
-          initial={STANDARD_ANIMATIONS.pageInitial}
-          animate={STANDARD_ANIMATIONS.pageAnimate}
+          initial={DASHBOARD_ANIMATIONS.pageInitial}
+          animate={DASHBOARD_ANIMATIONS.pageAnimate}
           transition={{ delay: 0.2 }}
         >
-          <StandardContentCard
-            title="Filtros e Busca"
-            icon={Filter}
-            color="info"
-          >
+          <Card className="border border-gray-200 rounded-2xl shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <Filter className="h-5 w-5 text-blue-600" />
+                Filtros e Busca
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="lg:col-span-2">
                   <div className="relative">
@@ -361,21 +366,27 @@ export default function TodosLeadsV3() {
                   </SelectContent>
                 </Select>
               </div>
-          </StandardContentCard>
+            </CardContent>
+          </Card>
         </motion.div>
 
-        {/* ✅ TABELA DE LEADS */}
+        {/* ✅ TABELA DE LEADS - LAYOUT LIMPO COMO DASHBOARD */}
         <motion.div
-          initial={STANDARD_ANIMATIONS.pageInitial}
-          animate={STANDARD_ANIMATIONS.pageAnimate}
+          initial={DASHBOARD_ANIMATIONS.pageInitial}
+          animate={DASHBOARD_ANIMATIONS.pageAnimate}
           transition={{ delay: 0.3 }}
         >
-          <StandardContentCard
-            title="Todos os Leads"
-            description="Gerencie todos os leads da equipe"
-            icon={Users}
-            color="primary"
-          >
+          <Card className="border border-gray-200 rounded-2xl shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <Users className="h-5 w-5 text-purple-600" />
+                Todos os Leads
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                Gerencie todos os leads da equipe
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -510,7 +521,8 @@ export default function TodosLeadsV3() {
                   </Pagination>
                 </div>
               )}
-          </StandardContentCard>
+            </CardContent>
+          </Card>
         </motion.div>
 
         {/* ✅ MODAIS */}
