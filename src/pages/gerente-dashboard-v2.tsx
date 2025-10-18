@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useDashboard } from '@/hooks/use-dashboard';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ManagerRoute } from '@/components/layout/auth-middleware';
+import { AILeadIndicators } from '@/components/ui/ai-indicators';
+import { AITooltip } from '@/components/ui/ai-tooltip';
 import {
   Users,
   TrendingUp,
@@ -39,6 +41,12 @@ import {
   Download,
   Search,
   MoreHorizontal,
+  Brain,
+  AlertTriangle,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Mail,
 } from 'lucide-react';
 
 // 🎨 PALETA DE CORES OTIMIZADA
@@ -65,10 +73,97 @@ export default function GerenteDashboardV2() {
     refetch,
   } = useDashboard();
 
+  // ✅ FUNÇÕES AUXILIARES PARA IA
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-red-600 bg-red-50 border-red-200';
+    if (score >= 60) return 'text-orange-600 bg-orange-50 border-orange-200';
+    if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    return 'text-blue-600 bg-blue-50 border-blue-200';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'urgente':
+        return 'text-red-600 bg-red-50 border-red-200';
+      case 'alta':
+        return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'media':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'baixa':
+        return 'text-green-600 bg-green-50 border-green-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'urgente':
+        return <AlertTriangle className="h-3 w-3" />;
+      case 'alta':
+        return <TrendingUp className="h-3 w-3" />;
+      case 'media':
+        return <Target className="h-3 w-3" />;
+      case 'baixa':
+        return <Clock className="h-3 w-3" />;
+      default:
+        return <Target className="h-3 w-3" />;
+    }
+  };
+
+  const getOriginIcon = (origin: string) => {
+    switch (origin?.toLowerCase()) {
+      case 'whatsapp':
+        return <MessageSquare className="h-3 w-3 text-green-500" />;
+      case 'site':
+        return <Users className="h-3 w-3 text-blue-500" />;
+      case 'indicacao':
+        return <Users className="h-3 w-3 text-purple-500" />;
+      case 'manual':
+        return <Settings className="h-3 w-3 text-gray-500" />;
+      default:
+        return <Users className="h-3 w-3 text-gray-500" />;
+    }
+  };
+
   // 🎯 ESTADOS PARA INTERATIVIDADE
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  
+  // ✅ FILTROS DE IA
+  const [scoreFilter, setScoreFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [originFilter, setOriginFilter] = useState('all');
+
+  // ✅ FILTRAR LEADS RECENTES COM BASE NOS FILTROS DE IA
+  const filteredLeadsRecentes = useMemo(() => {
+    return leadsRecentes.filter(lead => {
+      // Filtro por score
+      const matchesScore = (() => {
+        if (scoreFilter === 'all') return true;
+        const score = lead.score || 0;
+        switch (scoreFilter) {
+          case 'high':
+            return score >= 80;
+          case 'medium':
+            return score >= 50 && score < 80;
+          case 'low':
+            return score < 50;
+          default:
+            return true;
+        }
+      })();
+
+      // Filtro por prioridade
+      const matchesPriority = priorityFilter === 'all' || (lead as any).prioridade === priorityFilter;
+
+      // Filtro por origem
+      const matchesOrigin = originFilter === 'all' || lead.origem === originFilter;
+
+      return matchesScore && matchesPriority && matchesOrigin;
+    });
+  }, [leadsRecentes, scoreFilter, priorityFilter, originFilter]);
 
   // ✅ OTIMIZAÇÃO: Dados de gráficos removidos para melhor performance
 
@@ -438,25 +533,75 @@ export default function GerenteDashboardV2() {
         >
           <Card className='shadow-xl border-2 border-indigo-200 dark:border-indigo-800'>
             <CardHeader className='bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'>
-              <CardTitle className='flex items-center gap-2'>
-                <Activity className='h-5 w-5 text-indigo-600' />
-                Leads Recentes com IA
-              </CardTitle>
-              <CardDescription>
-                Últimos leads qualificados automaticamente
-              </CardDescription>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <CardTitle className='flex items-center gap-2'>
+                    <Brain className='h-5 w-5 text-indigo-600' />
+                    Leads Recentes com IA Avançada
+                  </CardTitle>
+                  <CardDescription>
+                    Últimos leads qualificados automaticamente com análise contextual completa
+                    {filteredLeadsRecentes.length !== leadsRecentes.length && (
+                      <span className='ml-2 text-blue-600 dark:text-blue-400 font-medium'>
+                        ({filteredLeadsRecentes.length} de {leadsRecentes.length} leads)
+                      </span>
+                    )}
+                  </CardDescription>
+                </div>
+                
+                {/* ✅ FILTROS DE IA */}
+                <div className='flex gap-2'>
+                  <select
+                    value={scoreFilter}
+                    onChange={(e) => setScoreFilter(e.target.value)}
+                    className='px-3 py-1 text-sm border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600'
+                  >
+                    <option value='all'>Todos os Scores</option>
+                    <option value='high'>Score Alto (80+)</option>
+                    <option value='medium'>Score Médio (50-79)</option>
+                    <option value='low'>Score Baixo (&lt;50)</option>
+                  </select>
+                  
+                  <select
+                    value={priorityFilter}
+                    onChange={(e) => setPriorityFilter(e.target.value)}
+                    className='px-3 py-1 text-sm border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600'
+                  >
+                    <option value='all'>Todas as Prioridades</option>
+                    <option value='urgente'>Urgente</option>
+                    <option value='alta'>Alta</option>
+                    <option value='media'>Média</option>
+                    <option value='baixa'>Baixa</option>
+                  </select>
+                  
+                  <select
+                    value={originFilter}
+                    onChange={(e) => setOriginFilter(e.target.value)}
+                    className='px-3 py-1 text-sm border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600'
+                  >
+                    <option value='all'>Todas as Origens</option>
+                    <option value='whatsapp'>WhatsApp</option>
+                    <option value='site'>Site</option>
+                    <option value='indicacao'>Indicação</option>
+                    <option value='manual'>Manual</option>
+                  </select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className='p-0'>
-            {leadsRecentes.length === 0 ? (
+            {filteredLeadsRecentes.length === 0 ? (
               <div className='p-12 text-center'>
                 <div className='w-20 h-20 mx-auto mb-4 rounded-full bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center'>
                   <Users className='h-10 w-10 text-indigo-400' />
                 </div>
                 <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
-                  Nenhum Lead Ainda
+                  {leadsRecentes.length === 0 ? 'Nenhum Lead Ainda' : 'Nenhum Lead Filtrado'}
                 </h3>
                 <p className='text-gray-600 dark:text-gray-400 mb-6'>
-                  Os leads da sua equipe aparecerão aqui em tempo real
+                  {leadsRecentes.length === 0 
+                    ? 'Os leads da sua equipe aparecerão aqui em tempo real'
+                    : 'Tente ajustar os filtros para ver mais leads'
+                  }
                 </p>
                 <Button onClick={handleNovoLead}>
                   <Plus className='mr-2 h-4 w-4' />
@@ -465,7 +610,7 @@ export default function GerenteDashboardV2() {
               </div>
             ) : (
               <div className='divide-y divide-gray-100 dark:divide-gray-800'>
-                {leadsRecentes.slice(0, 5).map((lead, index) => (
+                {filteredLeadsRecentes.slice(0, 5).map((lead, index) => (
                   <motion.div
                     key={lead.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -486,47 +631,49 @@ export default function GerenteDashboardV2() {
                           )}
                         </div>
 
-                        <div>
-                          <div className='flex items-center gap-2'>
+                        <div className='flex-1'>
+                          <div className='flex items-center gap-2 mb-2'>
                             <h4 className='font-semibold text-gray-900 dark:text-white'>
                               {lead.nome}
                             </h4>
-                            {lead.score && (
-                              <Badge
-                                className={
-                                  lead.score >= 80
-                                    ? 'bg-red-500 text-white'
-                                    : lead.score >= 50
-                                      ? 'bg-yellow-500 text-white'
-                                      : 'bg-blue-500 text-white'
-                                }
-                              >
-                                Score: {lead.score}
-                              </Badge>
-                            )}
+                            {/* ✅ INDICADORES IA MELHORADOS COM TOOLTIP */}
+                            <AITooltip lead={lead as any}>
+                              <AILeadIndicators 
+                                score={lead.score} 
+                                priority={(lead as any).prioridade} 
+                                origin={lead.origem}
+                                size="sm"
+                              />
+                            </AITooltip>
                           </div>
-                          <div className='flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400'>
-                            <span className='flex items-center gap-1'>
+                          
+                          <div className='grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400'>
+                            <div className='flex items-center gap-1'>
                               <UserCheck className='h-3 w-3' />
-                              {lead.corretor}
-                            </span>
-                            <span className='flex items-center gap-1'>
+                              <span className='truncate'>{lead.corretor}</span>
+                            </div>
+                            <div className='flex items-center gap-1'>
                               <Calendar className='h-3 w-3' />
-                              {new Date(lead.created_at).toLocaleDateString(
-                                'pt-BR'
-                              )}
-                            </span>
+                              <span>{new Date(lead.created_at).toLocaleDateString('pt-BR')}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       <div className='text-right'>
-                        <p className='font-bold text-green-600 dark:text-green-400'>
+                        <p className='font-bold text-green-600 dark:text-green-400 mb-2'>
                           R$ {lead.valor?.toLocaleString('pt-BR') || '0'}
                         </p>
-                        <Badge variant='outline' className='mt-1'>
+                        <Badge variant='outline' className='mb-1'>
                           {lead.status}
                         </Badge>
+                        {/* ✅ INFORMAÇÕES ADICIONAIS */}
+                        {(lead as any).cidade && (
+                          <div className='flex items-center gap-1 text-xs text-gray-500 mt-1'>
+                            <MapPin className='h-3 w-3' />
+                            <span>{(lead as any).cidade}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>

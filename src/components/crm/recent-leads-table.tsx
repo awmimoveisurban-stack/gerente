@@ -32,8 +32,18 @@ import {
   Users,
   MessageSquare,
   ArrowRight,
+  Star,
+  Zap,
+  AlertTriangle,
+  TrendingUp,
+  MapPin,
+  Clock,
+  Brain,
+  Target,
 } from 'lucide-react';
 import { type Lead } from '@/hooks/use-leads';
+import { AILeadIndicators } from '@/components/ui/ai-indicators';
+import { AITooltip } from '@/components/ui/ai-tooltip';
 
 interface RecentLeadsTableProps {
   leads: Lead[];
@@ -82,6 +92,59 @@ const LeadRow = memo(function LeadRow({
     }
   }, []);
 
+  // ✅ FUNÇÕES AUXILIARES PARA IA
+  const getScoreColor = useCallback((score: number) => {
+    if (score >= 80) return 'text-red-600 bg-red-50 border-red-200';
+    if (score >= 60) return 'text-orange-600 bg-orange-50 border-orange-200';
+    if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    return 'text-blue-600 bg-blue-50 border-blue-200';
+  }, []);
+
+  const getPriorityColor = useCallback((priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'urgente':
+        return 'text-red-600 bg-red-50 border-red-200';
+      case 'alta':
+        return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'media':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'baixa':
+        return 'text-green-600 bg-green-50 border-green-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  }, []);
+
+  const getPriorityIcon = useCallback((priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'urgente':
+        return <AlertTriangle className="h-3 w-3" />;
+      case 'alta':
+        return <TrendingUp className="h-3 w-3" />;
+      case 'media':
+        return <Target className="h-3 w-3" />;
+      case 'baixa':
+        return <Clock className="h-3 w-3" />;
+      default:
+        return <Target className="h-3 w-3" />;
+    }
+  }, []);
+
+  const getOriginIcon = useCallback((origin: string) => {
+    switch (origin?.toLowerCase()) {
+      case 'whatsapp':
+        return <MessageSquare className="h-3 w-3 text-green-500" />;
+      case 'site':
+        return <Users className="h-3 w-3 text-blue-500" />;
+      case 'indicacao':
+        return <Users className="h-3 w-3 text-purple-500" />;
+      case 'manual':
+        return <Edit className="h-3 w-3 text-gray-500" />;
+      default:
+        return <Users className="h-3 w-3 text-gray-500" />;
+    }
+  }, []);
+
   const handleViewDetails = useCallback(
     () => onViewDetails(lead),
     [lead, onViewDetails]
@@ -112,7 +175,7 @@ const LeadRow = memo(function LeadRow({
         </div>
       </TableCell>
       <TableCell>
-        <div className='space-y-1'>
+        <div className='space-y-2'>
           <div className='flex items-center gap-2'>
             <Phone className='h-4 w-4 text-blue-500' />
             <span className='text-gray-700 dark:text-gray-300 text-sm'>
@@ -130,21 +193,43 @@ const LeadRow = memo(function LeadRow({
         </div>
       </TableCell>
       <TableCell>
-        <div className='max-w-[180px] truncate bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300'>
-          {lead.imovel_interesse || 'Não especificado'}
+        <div className='space-y-2'>
+          <div className='max-w-[180px] truncate bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300'>
+            {lead.imovel_interesse || lead.interesse || 'Não especificado'}
+          </div>
+          {/* ✅ CIDADE DE INTERESSE */}
+          {lead.cidade && (
+            <div className='flex items-center gap-1'>
+              <MapPin className='h-3 w-3 text-gray-500' />
+              <span className='text-xs text-gray-500 dark:text-gray-400'>
+                {lead.cidade}
+              </span>
+            </div>
+          )}
         </div>
       </TableCell>
       <TableCell>
-        <div className='text-right'>
+        <div className='space-y-2'>
           <div className='font-semibold text-gray-900 dark:text-white text-sm'>
-            {lead.valor_interesse
-              ? `R$ ${lead.valor_interesse.toLocaleString('pt-BR')}`
+            {lead.valor_interesse || lead.orcamento
+              ? `R$ ${(lead.valor_interesse || lead.orcamento || 0).toLocaleString('pt-BR')}`
               : 'Não informado'}
           </div>
+          {/* ✅ INDICADORES IA MELHORADOS COM TOOLTIP */}
+          <AITooltip lead={lead}>
+            <AILeadIndicators 
+              score={lead.score_ia} 
+              priority={lead.prioridade} 
+              origin={lead.origem}
+              size="sm"
+            />
+          </AITooltip>
         </div>
       </TableCell>
       <TableCell>
-        <StatusBadge status={getStatusBadgeStatus(lead.status)} />
+        <div className='space-y-2'>
+          <StatusBadge status={getStatusBadgeStatus(lead.status)} />
+        </div>
       </TableCell>
       <TableCell>
         <div className='space-y-1'>
@@ -244,12 +329,12 @@ export const RecentLeadsTable = memo(function RecentLeadsTable({
           <div>
             <CardTitle className='text-xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-2'>
               <div className='p-1.5 bg-blue-500 rounded-lg'>
-                <Users className='h-4 w-4 text-white' />
+                <Brain className='h-4 w-4 text-white' />
               </div>
-              Leads Recentes ({leads.length})
+              Leads Recentes com IA ({leads.length})
             </CardTitle>
             <CardDescription className='text-blue-600 dark:text-blue-400 mt-1'>
-              📋 Seus leads mais recentes com informações detalhadas
+              🤖 Leads qualificados automaticamente com score, prioridade e análise contextual
             </CardDescription>
           </div>
           <Button
@@ -273,16 +358,16 @@ export const RecentLeadsTable = memo(function RecentLeadsTable({
                   👤 Cliente
                 </TableHead>
                 <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  📞 Contato
+                  📞 Contato & Origem
                 </TableHead>
                 <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  🏠 Interesse
+                  🏠 Interesse & Localização
                 </TableHead>
                 <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  💰 Valor
+                  💰 Valor & Score IA
                 </TableHead>
                 <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
-                  📊 Status
+                  📊 Status & Prioridade
                 </TableHead>
                 <TableHead className='font-semibold text-gray-700 dark:text-gray-300'>
                   📅 Última Interação
