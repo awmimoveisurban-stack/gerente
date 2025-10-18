@@ -39,6 +39,11 @@ WHERE lead_id NOT IN (
 -- 4. CORRIGIR FUNÇÃO DE AUDITORIA
 SELECT 'CORRIGINDO FUNÇÃO DE AUDITORIA' as status;
 
+-- Primeiro, dropar a função existente se ela existir
+DROP FUNCTION IF EXISTS log_lead_audit(UUID, TEXT, JSONB, JSONB, UUID, TEXT, INET, TEXT, TEXT, JSONB);
+DROP FUNCTION IF EXISTS log_lead_audit(UUID, TEXT, JSONB, JSONB);
+DROP FUNCTION IF EXISTS log_lead_audit(UUID, TEXT, JSONB, JSONB, UUID, TEXT);
+
 -- Recriar função de auditoria com verificação de existência
 CREATE OR REPLACE FUNCTION log_lead_audit(
     p_lead_id UUID,
