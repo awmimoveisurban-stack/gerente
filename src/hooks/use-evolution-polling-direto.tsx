@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { createLogger } from '@/utils/structured-logger';
 import { toast } from 'sonner';
 import { SimpleAIAnalyzer } from '@/utils/simple-ai-analyzer';
-import { useSafeLeadIntegration } from '@/components/notifications/safe-integration';
+import { useLeadCapture } from '@/hooks/use-lead-capture';
 
 const logger = createLogger('PollingDireto');
 
@@ -32,8 +32,8 @@ export const useEvolutionPollingDireto = (enabled: boolean = true) => {
   const processedMessagesRef = useRef<Set<string>>(new Set());
   const lastTimestampRef = useRef<number>(0); // ✅ MELHORIA #1: Armazenar último timestamp
   
-  // ✅ INTEGRAÇÃO SEGURA DE NOTIFICAÇÕES
-  const { notifyLeadCreated } = useSafeLeadIntegration();
+  // ✅ INTEGRAÇÃO COM NOVO SISTEMA DE CAPTURA
+  const { captureOrUpdateLead } = useLeadCapture();
 
   const analyzeWithClaude = useCallback(
     async (
@@ -240,18 +240,6 @@ Responda APENAS JSON:
                 maxTimestamp = msgTimestamp;
               }
 
-              // Verificar se lead já existe
-              const { data: existingLead } = await supabase
-                .from('leads')
-                .select('id')
-                .eq('telefone', phoneNumber)
-                .maybeSingle();
-
-              if (existingLead) {
-                processedMessagesRef.current.add(messageId);
-                continue;
-              }
-
               const senderName = msg.pushName || phoneNumber;
 
               logger.info(`💬 Nova mensagem: ${senderName}`);
@@ -266,68 +254,58 @@ Responda APENAS JSON:
                 `🤖 IA Simples: Score ${aiAnalysis.score}/100 | Prioridade: ${aiAnalysis.prioridade}`
               );
 
-              // ✅ CRIAR LEAD COM IA SIMPLES
+              // ✅ USAR NOVO SISTEMA DE CAPTURA INTELIGENTE
               const isUuid = (val?: string) =>
                 !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
               
-              const leadData: any = {
+              const leadData = {
                 nome: senderName,
                 telefone: phoneNumber,
                 origem: 'whatsapp',
                 status: 'novo',
                 observacoes: `[IA Score: ${aiAnalysis.score}/100 | Prioridade: ${aiAnalysis.prioridade}]\n${aiAnalysis.observacoes}\n\nMensagem: ${messageText}`,
-                // ✅ ESTRATÉGIA COMPATÍVEL: Usar user_id (existente) + adicionar manager_id se disponível
                 user_id: isUuid(config.manager_id) ? config.manager_id : null,
+                manager_id: isUuid(config.manager_id) ? config.manager_id : undefined,
+                atribuido_a: isUuid(config.manager_id) ? config.manager_id : undefined,
+                score_ia: aiAnalysis.score,
+                prioridade: aiAnalysis.prioridade,
+                interesse: aiAnalysis.tipo_imovel || undefined,
+                cidade: aiAnalysis.localizacao || undefined,
+                orcamento: aiAnalysis.valor_estimado || undefined,
+                mensagem_inicial: messageText,
+                data_contato: new Date().toISOString(),
+                metadata: {
+                  source: 'whatsapp_polling',
+                  ai_analysis: aiAnalysis,
+                  message_timestamp: msg.messageTimestamp,
+                },
               };
 
-              // ✅ Adicionar campos novos apenas se as colunas existirem
-              // (evita erro se a migração ainda não foi executada)
-              if (isUuid(config.manager_id)) {
-                leadData.manager_id = config.manager_id;
-                leadData.atribuido_a = config.manager_id;
-              }
-              
-              // Campos da IA (podem não existir ainda)
-              try {
-                leadData.score_ia = aiAnalysis.score;
-                leadData.prioridade = aiAnalysis.prioridade;
-                leadData.interesse = aiAnalysis.tipo_imovel || null;
-                leadData.cidade = aiAnalysis.localizacao || null;
-                leadData.orcamento = aiAnalysis.valor_estimado || null;
-                leadData.mensagem_inicial = messageText;
-                leadData.data_contato = new Date().toISOString();
-              } catch (fieldError) {
-                // Se algum campo não existir, continuar sem ele
-                logger.warn('Alguns campos da IA não puderam ser adicionados:', fieldError);
-              }
+              const conversationData = {
+                canal: 'whatsapp' as const,
+                mensagem: messageText,
+                tipo: 'entrada' as const,
+                origem: 'whatsapp',
+                metadata: {
+                  sender_name: senderName,
+                  message_timestamp: msg.messageTimestamp,
+                  ai_analysis: aiAnalysis,
+                },
+              };
 
-              // Criar lead
-              logger.info('📤 Tentando INSERT', { leadData });
+              logger.info('📤 Capturando/atualizando lead com novo sistema', { leadData });
 
-              const { data: lead, error: leadError } = await supabase
-                .from('leads')
-                .insert(leadData)
-                .select()
-                .single();
+              // ✅ USAR NOVO SISTEMA DE CAPTURA
+              const result = await captureOrUpdateLead(leadData, conversationData);
 
-              if (leadError) {
-                logger.error('❌ ERRO 400 DETALHADO', {
-                  message: leadError.message,
-                  code: leadError.code,
-                  details: leadError.details,
-                  hint: leadError.hint,
-                  leadData,
-                });
-              } else if (lead) {
-                logger.info('✅ Lead criado com IA!', {
-                  id: lead.id,
-                  nome: lead.nome,
+              if (result.success) {
+                logger.info('✅ Lead processado com sucesso!', {
+                  id: result.lead.id,
+                  nome: result.lead.nome,
+                  isNew: result.isNew,
                   score: aiAnalysis.score,
                   prioridade: aiAnalysis.prioridade,
                 });
-                
-                // ✅ NOTIFICAÇÃO DE LEAD CRIADO VIA WHATSAPP (SEGURO)
-                notifyLeadCreated(lead);
                 
                 processedMessagesRef.current.add(messageId);
                 totalLeads++;
@@ -341,9 +319,12 @@ Responda APENAS JSON:
                       ? '⚠️'
                       : 'ℹ️';
 
-                toast.success(`${tipoEmoji} Novo lead qualificado pela IA!`, {
+                const actionText = result.isNew ? 'Novo lead' : 'Lead atualizado';
+                toast.success(`${tipoEmoji} ${actionText} qualificado pela IA!`, {
                   description: `${urgenciaEmoji} ${senderName} | Score: ${aiAnalysis.score}/100 | ${aiAnalysis.prioridade.toUpperCase()}`,
                 });
+              } else {
+                logger.error('❌ Erro no sistema de captura:', result.error);
               }
             } catch (msgError: any) {
               logger.error('Erro ao processar mensagem', {
