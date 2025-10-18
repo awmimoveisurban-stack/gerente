@@ -328,7 +328,7 @@ export default function TodosLeadsV3() {
                   <SelectContent>
                     <SelectItem value="all">Todos os Corretores</SelectItem>
                     {corretores.map((corretor) => (
-                      <SelectItem key={corretor.id} value={corretor.email}>
+                      <SelectItem key={corretor.user_id || corretor.email} value={corretor.email}>
                         {corretor.nome}
                       </SelectItem>
                     ))}
