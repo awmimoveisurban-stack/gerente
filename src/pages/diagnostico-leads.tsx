@@ -120,11 +120,11 @@ export default function DiagnosticoLeads() {
         }
       }
 
-      // 4. Verificar leads recentes
+      // 4. Verificar leads recentes (buscar por user_id OU manager_id)
       const { data: leads, error: leadsError } = await supabase
         .from('leads')
         .select('*')
-        .eq('user_id', user?.id)
+        .or(`user_id.eq.${user?.id},manager_id.eq.${user?.id}`)
         .order('created_at', { ascending: false })
         .limit(10);
 

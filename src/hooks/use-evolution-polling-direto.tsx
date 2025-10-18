@@ -275,16 +275,31 @@ Responda APENAS JSON:
                 telefone: phoneNumber,
                 origem: 'whatsapp',
                 status: 'novo',
-                score_ia: aiAnalysis.score, // ✅ Score 0-100
-                interesse: aiAnalysis.tipo_imovel || null,
-                cidade: aiAnalysis.localizacao || null,
-                orcamento: aiAnalysis.valor_estimado || null,
-                prioridade: aiAnalysis.prioridade,
                 observacoes: `[IA Score: ${aiAnalysis.score}/100 | Prioridade: ${aiAnalysis.prioridade}]\n${aiAnalysis.observacoes}\n\nMensagem: ${messageText}`,
-                user_id: isUuid(config.manager_id) ? config.manager_id : null, // ✅ CORREÇÃO: Usar null se não for UUID válido
-                manager_id: config.manager_id || null,
-                atribuido_a: config.manager_id || null,
+                // ✅ ESTRATÉGIA COMPATÍVEL: Usar user_id (existente) + adicionar manager_id se disponível
+                user_id: isUuid(config.manager_id) ? config.manager_id : null,
               };
+
+              // ✅ Adicionar campos novos apenas se as colunas existirem
+              // (evita erro se a migração ainda não foi executada)
+              if (isUuid(config.manager_id)) {
+                leadData.manager_id = config.manager_id;
+                leadData.atribuido_a = config.manager_id;
+              }
+              
+              // Campos da IA (podem não existir ainda)
+              try {
+                leadData.score_ia = aiAnalysis.score;
+                leadData.prioridade = aiAnalysis.prioridade;
+                leadData.interesse = aiAnalysis.tipo_imovel || null;
+                leadData.cidade = aiAnalysis.localizacao || null;
+                leadData.orcamento = aiAnalysis.valor_estimado || null;
+                leadData.mensagem_inicial = messageText;
+                leadData.data_contato = new Date().toISOString();
+              } catch (fieldError) {
+                // Se algum campo não existir, continuar sem ele
+                logger.warn('Alguns campos da IA não puderam ser adicionados:', fieldError);
+              }
 
               // Criar lead
               logger.info('📤 Tentando INSERT', { leadData });
