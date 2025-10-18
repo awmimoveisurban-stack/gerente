@@ -133,25 +133,6 @@ export default function TodosLeadsV3() {
     }
   }, []);
 
-  // ✅ LOADING STATE PARA BUSCA COM DEBOUNCE
-  useEffect(() => {
-    if (searchTerm !== debouncedSearchTerm) {
-      setIsSearching(true);
-    } else {
-      setIsSearching(false);
-    }
-  }, [searchTerm, debouncedSearchTerm]);
-
-  // ✅ LOADING STATE PARA FILTROS
-  useEffect(() => {
-    setIsFiltering(true);
-    const timer = setTimeout(() => {
-      setIsFiltering(false);
-    }, 100); // Simular processamento de filtros
-    
-    return () => clearTimeout(timer);
-  }, [statusFilter, origemFilter, corretorFilter]);
-
   // Estados dos modais
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
   const [showLeadDetailsModal, setShowLeadDetailsModal] = useState(false);
@@ -182,6 +163,25 @@ export default function TodosLeadsV3() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [origemFilter, setOrigemFilter] = useState('all');
   const [corretorFilter, setCorretorFilter] = useState('all');
+
+  // ✅ LOADING STATE PARA BUSCA COM DEBOUNCE
+  useEffect(() => {
+    if (searchTerm !== debouncedSearchTerm) {
+      setIsSearching(true);
+    } else {
+      setIsSearching(false);
+    }
+  }, [searchTerm, debouncedSearchTerm]);
+
+  // ✅ LOADING STATE PARA FILTROS
+  useEffect(() => {
+    setIsFiltering(true);
+    const timer = setTimeout(() => {
+      setIsFiltering(false);
+    }, 100); // Simular processamento de filtros
+    
+    return () => clearTimeout(timer);
+  }, [statusFilter, origemFilter, corretorFilter]);
 
   // Hooks
   const { leads, loading, refetch } = useLeads();
