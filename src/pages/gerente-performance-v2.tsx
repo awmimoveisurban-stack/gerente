@@ -1,17 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AppLayout } from '@/components/layout/app-layout';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useCorretorPerformanceReal } from '@/hooks/use-corretor-performance-real';
 import {
@@ -57,27 +46,29 @@ import {
   UserCheck,
 } from 'lucide-react';
 
-// 🎨 PALETA DE CORES OTIMIZADA (igual ao dashboard)
-const COLORS = {
-  primary: '#6366F1',      // Indigo mais moderno
-  success: '#10B981',      // Verde mantido
-  warning: '#F59E0B',      // Amarelo mantido
-  danger: '#EF4444',       // Vermelho mantido
-  info: '#3B82F6',         // Azul mantido
-  purple: '#8B5CF6',       // Roxo mantido
-  teal: '#14B8A6',         // Teal mantido
-  orange: '#F97316',       // Laranja mantido
-};
+// ✅ IMPORTAÇÕES PADRONIZADAS
+import {
+  StandardPageLayout,
+  StandardHeader,
+  StandardMetricCard,
+  StandardGrid,
+  useStandardLayout,
+  STANDARD_COLORS,
+  LAYOUT_CONFIG,
+  STANDARD_ANIMATIONS,
+} from '@/components/layout/standard-layout';
+import { ManagerRoute } from '@/components/layout/auth-middleware';
 
 
 export default function GerentePerformance() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  // ✅ USAR HOOK PADRONIZADO
+  const { isRefreshing, handleRefresh } = useStandardLayout();
+  
   // Estados
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   // Hook para dados reais de performance
   const {
@@ -88,24 +79,7 @@ export default function GerentePerformance() {
     refetch,
   } = useCorretorPerformanceReal();
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refetch();
-      toast({
-        title: '✅ Dados Atualizados',
-        description: 'Performance da equipe atualizada com sucesso!',
-      });
-    } catch (error) {
-      toast({
-        title: '❌ Erro ao Atualizar',
-        description: 'Não foi possível atualizar os dados.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+  const handleRefreshData = () => handleRefresh(refetch, toast);
 
   const handleExportCSV = () => {
     const csvContent = [
@@ -145,67 +119,87 @@ export default function GerentePerformance() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return COLORS.success;
-    if (score >= 60) return COLORS.info;
-    if (score >= 40) return COLORS.warning;
-    return COLORS.danger;
+    if (score >= 80) return STANDARD_COLORS.success;
+    if (score >= 60) return STANDARD_COLORS.info;
+    if (score >= 40) return STANDARD_COLORS.warning;
+    return STANDARD_COLORS.danger;
   };
 
   if (loading) {
     return (
-      <AppLayout>
+      <StandardPageLayout>
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-2">
             <RefreshCw className="h-6 w-6 animate-spin" />
             <span>Carregando dados de performance...</span>
           </div>
         </div>
-      </AppLayout>
+      </StandardPageLayout>
     );
   }
 
+  // ✅ HEADER PADRONIZADO
+  const headerActions = (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRefreshData}
+        disabled={isRefreshing}
+      >
+        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+        Atualizar
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+            <ChevronDown className="h-4 w-4 ml-2" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={handleExportCSV}>
+            <FileText className="h-4 w-4 mr-2" />
+            CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimir
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+
+  const headerBadges = [
+    {
+      icon: <Users className="h-3 w-3" />,
+      text: `${metrics?.totalCorretores || 0} corretores`,
+    },
+    {
+      icon: <Target className="h-3 w-3" />,
+      text: `${metrics?.taxaMediaConversao?.toFixed(1) || '0.0'}% conversão`,
+    },
+    {
+      icon: <DollarSign className="h-3 w-3" />,
+      text: `R$ ${metrics?.valorTotalVendido?.toLocaleString() || '0'}`,
+    },
+  ];
+
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header com ações */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Performance da Equipe</h1>
-            <p className="text-muted-foreground">
-              Acompanhe o desempenho dos corretores em tempo real
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={handleExportCSV}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => window.print()}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Imprimir
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+    <ManagerRoute>
+      <StandardPageLayout
+        header={
+          <StandardHeader
+            title="Performance da Equipe"
+            description="📊 Acompanhe o desempenho dos corretores em tempo real"
+            icon={<Trophy className="h-6 w-6 text-white" />}
+            badges={headerBadges}
+            actions={headerActions}
+          />
+        }
+      >
 
         {/* Métricas Gerais */}
         {metrics && (

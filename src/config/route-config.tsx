@@ -27,17 +27,17 @@ import AdminTestData from '@/pages/admin-test-data';
 const Auth = lazy(() => import('@/pages/auth-v2'));
 const CorretorDashboard = lazy(() => import('@/pages/corretor-dashboard'));
 const GerenteDashboard = lazy(() => import('@/pages/gerente-dashboard-v2'));
-const Leads = lazy(() => import('@/pages/leads-v2'));
+const Leads = lazy(() => import('@/pages/leads-v3')); // ✅ PÁGINA PADRONIZADA
 const KanbanEnhanced = lazy(() => import('@/pages/kanban-enhanced'));
 const Relatorios = lazy(() => import('@/pages/relatorios'));
-const GerenteRelatorios = lazy(() => import('@/pages/gerente-relatorios'));
-const GerenteEquipe = lazy(() => import('@/pages/gerente-equipe'));
-const TodosLeads = lazy(() => import('@/pages/todos-leads-v2'));
+const GerenteRelatorios = lazy(() => import('@/pages/gerente-relatorios-v3')); // ✅ PÁGINA PADRONIZADA
+const GerenteEquipe = lazy(() => import('@/pages/gerente-equipe-v3')); // ✅ PÁGINA PADRONIZADA
+const TodosLeads = lazy(() => import('@/pages/todos-leads-v3')); // ✅ PÁGINA PADRONIZADA
 const NotificationsPage = lazy(() => import('@/pages/notifications'));
-const EvolutionWhatsAppAuto = lazy(() => import('@/pages/evolution-whatsapp-auto'));
+const EvolutionWhatsAppAuto = lazy(() => import('@/pages/evolution-whatsapp-v3')); // ✅ PÁGINA PADRONIZADA
 const TestNotifications = lazy(() => import('@/pages/test-notifications'));
 const TestNotificationsDebug = lazy(() => import('@/pages/test-notifications-debug'));
-const GerentePerformance = lazy(() => import('@/pages/gerente-performance-v2'));
+const GerentePerformance = lazy(() => import('@/pages/gerente-performance-v3')); // ✅ PÁGINA PADRONIZADA
 const Profile = lazy(() => import('@/pages/profile')); // ✅ Página de perfil
 const Configuracoes = lazy(() => import('@/pages/configuracoes')); // ✅ Página de configurações
 const DiagnosticoLeads = lazy(() => import('@/pages/diagnostico-leads')); // ✅ Página de diagnóstico
