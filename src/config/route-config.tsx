@@ -197,6 +197,14 @@ export const routes: RouteObject[] = [
       </ProtectedRoute>
     ),
   },
+  {
+    path: '/whatsapp',
+    element: (
+      <ProtectedRoute allowedRoles={['gerente']}>
+        <EvolutionWhatsAppAuto />
+      </ProtectedRoute>
+    ),
+  },
 
   // ----------------------------------------------------------------------------
   // ROTAS COMPARTILHADAS (corretor + gerente)
