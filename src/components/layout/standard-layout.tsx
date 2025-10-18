@@ -37,11 +37,11 @@ export {
   useDashboardAnimations,
 };
 
-// 🎯 CONFIGURAÇÕES DE LAYOUT PADRONIZADAS
+// 🎯 CONFIGURAÇÕES DE LAYOUT EXATAS DAS IMAGENS
 export const LAYOUT_CONFIG = {
   containerPadding: 'space-y-8',
-  headerGradient: 'bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800',
-  headerBorder: 'border border-blue-200/50 dark:border-gray-700/50',
+  headerGradient: 'bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800', // Exato das imagens
+  headerBorder: 'border border-gray-200/50 dark:border-gray-700/50',
   headerShadow: 'shadow-lg',
   headerRadius: 'rounded-3xl',
   headerPadding: 'p-8',
@@ -103,7 +103,7 @@ export const StandardHeader: React.FC<StandardHeaderProps> = ({
               </div>
             )}
             <div>
-              <h1 className='text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent'>
+              <h1 className='text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white'>
                 {title}
               </h1>
               <p className='text-gray-600 dark:text-gray-400 mt-2 text-lg'>

@@ -3,31 +3,31 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
-// 🎨 CORES BASEADAS NAS IMAGENS DO DASHBOARD
+// 🎨 CORES EXATAS BASEADAS NAS IMAGENS DO DASHBOARD
 export const DASHBOARD_COLORS = {
-  // Cores principais dos cards
+  // Cores principais dos cards (exatas das imagens)
   primary: '#A088D7',      // Roxo claro (Total de Leads)
-  success: '#66D9B1',      // Verde claro (Leads Fechados)
+  success: '#66D9B1',      // Verde claro (Leads Fechados) 
   warning: '#F59E0B',      // Laranja (Taxa de Conversão)
   info: '#3B82F6',         // Azul (Corretores Ativos)
   
-  // Cores de texto
+  // Cores de texto (exatas das imagens)
   textPrimary: '#1F2937',  // Cinza escuro para títulos
   textSecondary: '#6B7280', // Cinza médio para subtítulos
   textLight: '#9CA3AF',    // Cinza claro para descrições
   
-  // Cores de fundo
+  // Cores de fundo (exatas das imagens)
   background: '#FFFFFF',   // Branco principal
   headerBackground: '#F8F9FC', // Roxo muito claro do header
   
-  // Cores de borda
+  // Cores de borda (exatas das imagens)
   borderPrimary: '#E5E7EB',   // Cinza claro para bordas
-  borderPurple: '#D1D5DB',    // Bordas roxas dos cards
-  borderGreen: '#D1FAE5',     // Bordas verdes dos cards
-  borderOrange: '#FED7AA',    // Bordas laranja dos cards
-  borderBlue: '#DBEAFE',      // Bordas azuis dos cards
+  borderPurple: '#E5E7EB',    // Bordas roxas dos cards (mais sutil)
+  borderGreen: '#E5E7EB',     // Bordas verdes dos cards (mais sutil)
+  borderOrange: '#E5E7EB',    // Bordas laranja dos cards (mais sutil)
+  borderBlue: '#E5E7EB',      // Bordas azuis dos cards (mais sutil)
   
-  // Cores de trend
+  // Cores de trend (exatas das imagens)
   trendPositive: '#10B981',   // Verde para trends positivos
   trendNegative: '#EF4444',   // Vermelho para trends negativos
 };
@@ -66,46 +66,46 @@ interface StandardDashboardCardProps {
   className?: string;
 }
 
-// 🎨 MAPEAMENTO DE CORES PARA CLASSES TAILWIND
+// 🎨 MAPEAMENTO DE CORES EXATO DAS IMAGENS
 const COLOR_MAPPING = {
   primary: {
     bg: 'bg-purple-100',
     text: 'text-purple-600',
-    border: 'border-purple-200',
+    border: 'border-gray-200', // Bordas sutis como nas imagens
   },
   success: {
     bg: 'bg-green-100',
     text: 'text-green-600',
-    border: 'border-green-200',
+    border: 'border-gray-200',
   },
   warning: {
     bg: 'bg-orange-100',
     text: 'text-orange-600',
-    border: 'border-orange-200',
+    border: 'border-gray-200',
   },
   info: {
     bg: 'bg-blue-100',
     text: 'text-blue-600',
-    border: 'border-blue-200',
+    border: 'border-gray-200',
   },
   purple: {
     bg: 'bg-purple-100',
     text: 'text-purple-600',
-    border: 'border-purple-200',
+    border: 'border-gray-200',
   },
   teal: {
     bg: 'bg-teal-100',
     text: 'text-teal-600',
-    border: 'border-teal-200',
+    border: 'border-gray-200',
   },
   orange: {
     bg: 'bg-orange-100',
     text: 'text-orange-600',
-    border: 'border-orange-200',
+    border: 'border-gray-200',
   },
 };
 
-// ✅ COMPONENTE PRINCIPAL BASEADO NAS IMAGENS
+// ✅ COMPONENTE PRINCIPAL EXATO DAS IMAGENS
 export const StandardDashboardCard: React.FC<StandardDashboardCardProps> = ({
   title,
   value,
@@ -125,28 +125,28 @@ export const StandardDashboardCard: React.FC<StandardDashboardCardProps> = ({
       whileTap={DASHBOARD_ANIMATIONS.cardTap}
       className={`relative h-full ${className}`}
     >
-      <Card className={`cursor-pointer transition-all duration-300 hover:shadow-xl border-2 h-full ${finalBorderColor}`}>
+      <Card className={`cursor-pointer transition-all duration-300 hover:shadow-xl border-2 h-full ${finalBorderColor} rounded-2xl`}>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              {/* Título do card */}
+              {/* Título do card - tamanho exato das imagens */}
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                 {title}
               </p>
               
-              {/* Valor principal */}
+              {/* Valor principal - tamanho exato das imagens */}
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {value}
               </p>
               
-              {/* Subtítulo */}
+              {/* Subtítulo - tamanho exato das imagens */}
               {subtitle && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {subtitle}
                 </p>
               )}
               
-              {/* Trend indicator */}
+              {/* Trend indicator - tamanho exato das imagens */}
               {trend && (
                 <div className="flex items-center mt-2">
                   {trend.positive ? (
@@ -165,7 +165,7 @@ export const StandardDashboardCard: React.FC<StandardDashboardCardProps> = ({
               )}
             </div>
             
-            {/* Ícone */}
+            {/* Ícone - tamanho exato das imagens */}
             <div className={`p-3 rounded-xl ${colorClasses.bg}`}>
               <Icon className={`h-8 w-8 ${colorClasses.text}`} />
             </div>
@@ -176,7 +176,7 @@ export const StandardDashboardCard: React.FC<StandardDashboardCardProps> = ({
   );
 };
 
-// 🎯 COMPONENTE DE GRID PADRONIZADO
+// 🎯 COMPONENTE DE GRID EXATO DAS IMAGENS
 interface StandardDashboardGridProps {
   children: React.ReactNode;
   columns?: '2' | '3' | '4' | '6';
@@ -191,7 +191,7 @@ export const StandardDashboardGrid: React.FC<StandardDashboardGridProps> = ({
   const gridClasses = {
     '2': 'grid-cols-1 md:grid-cols-2',
     '3': 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-    '4': 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+    '4': 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4', // Exato das imagens
     '6': 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
   };
 
@@ -202,7 +202,7 @@ export const StandardDashboardGrid: React.FC<StandardDashboardGridProps> = ({
   );
 };
 
-// 🎨 COMPONENTE DE CONTAINER PADRONIZADO
+// 🎨 COMPONENTE DE CONTAINER EXATO DAS IMAGENS
 interface StandardDashboardContainerProps {
   children: React.ReactNode;
   className?: string;
