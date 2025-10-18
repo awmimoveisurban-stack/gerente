@@ -18,14 +18,11 @@ import { ManagerRoute } from '@/components/layout/auth-middleware';
 import { AILeadIndicators } from '@/components/ui/ai-indicators';
 import { AITooltip } from '@/components/ui/ai-tooltip';
 import {
-  ProbabilityIndicator,
-  UrgencyIndicator,
-  NextActionIndicator,
-  TimeInPipelineIndicator,
-  PreferredChannelIndicator,
-  SentimentIndicator,
-  BudgetRangeIndicator,
-} from '@/components/ui/advanced-ai-indicators';
+  SimpleProbability,
+  SimpleUrgency,
+  SimpleNextAction,
+  SimpleTime,
+} from '@/components/ui/simple-ai-indicators';
 import {
   calcularProbabilidadeFechamento,
   calcularUrgencia,
@@ -557,10 +554,10 @@ export default function GerenteDashboardV2() {
                 <div>
                   <CardTitle className='flex items-center gap-2'>
                     <Brain className='h-5 w-5 text-indigo-600' />
-                    Leads Recentes com IA Avançada
+                    Leads Recentes com IA Simplificada
                   </CardTitle>
                   <CardDescription>
-                    Últimos leads qualificados automaticamente com análise contextual completa
+                    Layout limpo e intuitivo: probabilidade, urgência, tempo e próxima ação
                     {filteredLeadsRecentes.length !== leadsRecentes.length && (
                       <span className='ml-2 text-blue-600 dark:text-blue-400 font-medium'>
                         ({filteredLeadsRecentes.length} de {leadsRecentes.length} leads)
@@ -670,9 +667,9 @@ export default function GerenteDashboardV2() {
                       transition={{ delay: index * 0.1 }}
                       className='p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'
                     >
-                      {/* 🎯 LINHA 1: IDENTIFICAÇÃO + QUALIFICAÇÃO + URGÊNCIA */}
+                      {/* 🎯 LAYOUT SIMPLIFICADO - 2 LINHAS */}
                       <div className='flex items-center justify-between mb-4'>
-                        {/* Identificação */}
+                        {/* Cliente e Status */}
                         <div className='flex items-center gap-3'>
                           <div className='relative'>
                             <div className='w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg'>
@@ -688,84 +685,38 @@ export default function GerenteDashboardV2() {
                             <h4 className='font-semibold text-gray-900 dark:text-white text-lg'>
                               {lead.nome}
                             </h4>
-                            <p className='text-sm text-gray-500 dark:text-gray-400'>
-                              {lead.origem || 'Origem não informada'} • {lead.corretor}
-                            </p>
+                            <div className='flex items-center gap-2'>
+                              <Badge variant='outline' className='text-sm'>
+                                {lead.status}
+                              </Badge>
+                              <span className='text-sm text-gray-500'>
+                                {lead.origem || 'Origem não informada'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         
-                        {/* Qualificação IA */}
-                        <div className='flex items-center gap-2'>
-                          <ProbabilityIndicator 
-                            probability={probabilidade} 
-                            size="sm" 
-                            showLabel={true}
-                          />
-                          <UrgencyIndicator 
-                            urgency={urgencia} 
-                            size="sm" 
-                            showLabel={true}
-                          />
-                        </div>
-                      </div>
-
-                      {/* 🎯 LINHA 2: STATUS + HISTÓRICO + AÇÃO */}
-                      <div className='flex items-center justify-between mb-4'>
-                        {/* Status e Histórico */}
-                        <div className='flex items-center gap-4'>
-                          <Badge variant='outline' className='text-sm'>
-                            {lead.status}
-                          </Badge>
-                          <div className='flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400'>
-                            <Clock className='h-3 w-3' />
-                            <span>Última: {formatarDataRelativa(leadCompleto.last_interaction_at)}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Ação e Tempo */}
-                        <div className='flex items-center gap-2'>
-                          <NextActionIndicator 
-                            action={proximaAcao} 
-                            size="sm" 
-                            showLabel={true}
-                          />
-                          <TimeInPipelineIndicator 
-                            days={tempoNoPipeline} 
-                            size="sm" 
-                            showLabel={true}
-                          />
-                        </div>
-                      </div>
-
-                      {/* 🎯 LINHA 3: FINANCEIRO + COMUNICAÇÃO + SENTIMENTO */}
-                      <div className='flex items-center justify-between'>
-                        {/* Financeiro */}
-                        <div className='flex items-center gap-4'>
+                        {/* Valor */}
+                        <div className='text-right'>
                           <div className='text-lg font-bold text-green-600 dark:text-green-400'>
                             {leadCompleto.valor && leadCompleto.valor > 0
                               ? `R$ ${leadCompleto.valor.toLocaleString('pt-BR')}`
                               : 'Valor não informado'}
                           </div>
-                          <BudgetRangeIndicator 
-                            range={faixaPreco} 
-                            size="sm" 
-                            showLabel={true}
-                          />
+                        </div>
+                      </div>
+
+                      {/* 🎯 LINHA 2: INDICADORES E AÇÃO */}
+                      <div className='flex items-center justify-between'>
+                        {/* Indicadores IA */}
+                        <div className='flex items-center gap-2'>
+                          <SimpleProbability probability={probabilidade} />
+                          <SimpleUrgency urgency={urgencia} />
+                          <SimpleTime days={tempoNoPipeline} />
                         </div>
                         
-                        {/* Comunicação e Sentimento */}
-                        <div className='flex items-center gap-4'>
-                          <PreferredChannelIndicator 
-                            channel={canalPreferido} 
-                            size="sm" 
-                            showLabel={true}
-                          />
-                          <SentimentIndicator 
-                            sentiment={sentimento} 
-                            size="sm" 
-                            showLabel={true}
-                          />
-                        </div>
+                        {/* Próxima Ação */}
+                        <SimpleNextAction action={proximaAcao} />
                       </div>
                     </motion.div>
                   );

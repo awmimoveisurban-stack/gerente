@@ -46,14 +46,11 @@ import { type Lead } from '@/hooks/use-leads';
 import { AILeadIndicators } from '@/components/ui/ai-indicators';
 import { AITooltip } from '@/components/ui/ai-tooltip';
 import {
-  ProbabilityIndicator,
-  UrgencyIndicator,
-  NextActionIndicator,
-  TimeInPipelineIndicator,
-  PreferredChannelIndicator,
-  SentimentIndicator,
-  BudgetRangeIndicator,
-} from '@/components/ui/advanced-ai-indicators';
+  SimpleProbability,
+  SimpleUrgency,
+  SimpleNextAction,
+  SimpleTime,
+} from '@/components/ui/simple-ai-indicators';
 import {
   calcularProbabilidadeFechamento,
   calcularUrgencia,
@@ -212,9 +209,9 @@ const LeadRow = memo(function LeadRow({
   return (
     <TableRow className='border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors'>
       <TableCell colSpan={6} className='p-4'>
-        {/* 🎯 LINHA 1: IDENTIFICAÇÃO + QUALIFICAÇÃO + URGÊNCIA */}
+        {/* 🎯 LINHA 1: INFORMAÇÕES PRINCIPAIS */}
         <div className='flex items-center justify-between mb-3'>
-          {/* Identificação */}
+          {/* Cliente e Status */}
           <div className='flex items-center gap-3'>
             <Avatar className='w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm font-bold'>
               {lead.nome.charAt(0).toUpperCase()}
@@ -223,112 +220,64 @@ const LeadRow = memo(function LeadRow({
               <h4 className='font-semibold text-gray-900 dark:text-white text-base'>
                 {lead.nome}
               </h4>
-              <p className='text-sm text-gray-500 dark:text-gray-400'>
-                {lead.origem || 'Origem não informada'}
-              </p>
+              <div className='flex items-center gap-2'>
+                <StatusBadge status={getStatusBadgeStatus(lead.status)} />
+                <span className='text-sm text-gray-500'>
+                  {lead.origem || 'Origem não informada'}
+                </span>
+              </div>
             </div>
           </div>
           
-          {/* Qualificação IA */}
-          <div className='flex items-center gap-2'>
-            <ProbabilityIndicator 
-              probability={probabilidade} 
-              size="sm" 
-              showLabel={true}
-            />
-            <UrgencyIndicator 
-              urgency={urgencia} 
-              size="sm" 
-              showLabel={true}
-            />
-          </div>
-        </div>
-
-        {/* 🎯 LINHA 2: STATUS + HISTÓRICO + AÇÃO */}
-        <div className='flex items-center justify-between mb-3'>
-          {/* Status e Histórico */}
-          <div className='flex items-center gap-4'>
-            <StatusBadge status={getStatusBadgeStatus(lead.status)} />
-            <div className='flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400'>
-              <Clock className='h-3 w-3' />
-              <span>Última: {formatarDataRelativa(leadCompleto.last_interaction_at)}</span>
-            </div>
-          </div>
-          
-          {/* Ação e Tempo */}
-          <div className='flex items-center gap-2'>
-            <NextActionIndicator 
-              action={proximaAcao} 
-              size="sm" 
-              showLabel={true}
-            />
-            <TimeInPipelineIndicator 
-              days={tempoNoPipeline} 
-              size="sm" 
-              showLabel={true}
-            />
-          </div>
-        </div>
-
-        {/* 🎯 LINHA 3: FINANCEIRO + COMUNICAÇÃO + SENTIMENTO */}
-        <div className='flex items-center justify-between'>
-          {/* Financeiro */}
-          <div className='flex items-center gap-4'>
-            <div className='text-sm font-semibold text-gray-900 dark:text-white'>
+          {/* Valor */}
+          <div className='text-right'>
+            <div className='text-lg font-bold text-green-600 dark:text-green-400'>
               {leadCompleto.valor && leadCompleto.valor > 0
                 ? `R$ ${leadCompleto.valor.toLocaleString('pt-BR')}`
                 : 'Valor não informado'}
             </div>
-            <BudgetRangeIndicator 
-              range={faixaPreco} 
-              size="sm" 
-              showLabel={true}
-            />
-          </div>
-          
-          {/* Comunicação e Sentimento */}
-          <div className='flex items-center gap-4'>
-            <PreferredChannelIndicator 
-              channel={canalPreferido} 
-              size="sm" 
-              showLabel={true}
-            />
-            <SentimentIndicator 
-              sentiment={sentimento} 
-              size="sm" 
-              showLabel={true}
-            />
           </div>
         </div>
 
-        {/* 🎯 AÇÕES RÁPIDAS */}
-        <div className='flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800'>
-          <Button
-            variant='ghost'
-            size='sm'
-            className='hover:bg-blue-50 dark:hover:bg-blue-950/20'
-            title='Ver detalhes'
-            onClick={handleViewDetails}
-            aria-label={`Ver detalhes do lead ${lead.nome}`}
-          >
-            <Eye className='h-4 w-4 text-blue-500' />
-          </Button>
-          <Button
-            variant='ghost'
-            size='sm'
-            className='hover:bg-green-50 dark:hover:bg-green-950/20'
-            title='Ligar'
-            onClick={handleCall}
-            aria-label={`Ligar para ${lead.nome}`}
-          >
-            <Phone className='h-4 w-4 text-green-500' />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+        {/* 🎯 LINHA 2: AÇÕES E INDICADORES */}
+        <div className='flex items-center justify-between'>
+          {/* Indicadores IA */}
+          <div className='flex items-center gap-2'>
+            <SimpleProbability probability={probabilidade} />
+            <SimpleUrgency urgency={urgencia} />
+            <SimpleTime days={tempoNoPipeline} />
+          </div>
+          
+          {/* Próxima Ação */}
+          <div className='flex items-center gap-2'>
+            <SimpleNextAction action={proximaAcao} />
+            <div className='flex items-center gap-1'>
               <Button
                 variant='ghost'
                 size='sm'
-                className='hover:bg-gray-100 dark:hover:bg-gray-700'
+                className='hover:bg-blue-50 dark:hover:bg-blue-950/20'
+                title='Ver detalhes'
+                onClick={handleViewDetails}
+                aria-label={`Ver detalhes do lead ${lead.nome}`}
+              >
+                <Eye className='h-4 w-4 text-blue-500' />
+              </Button>
+              <Button
+                variant='ghost'
+                size='sm'
+                className='hover:bg-green-50 dark:hover:bg-green-950/20'
+                title='Ligar'
+                onClick={handleCall}
+                aria-label={`Ligar para ${lead.nome}`}
+              >
+                <Phone className='h-4 w-4 text-green-500' />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='hover:bg-gray-100 dark:hover:bg-gray-700'
                 aria-label={`Mais opções para ${lead.nome}`}
               >
                 <MoreHorizontal className='h-4 w-4' />
@@ -384,10 +333,10 @@ export const RecentLeadsTable = memo(function RecentLeadsTable({
               <div className='p-1.5 bg-blue-500 rounded-lg'>
                 <Brain className='h-4 w-4 text-white' />
               </div>
-              Leads Recentes com IA Avançada ({leads.length})
+              Leads Recentes com IA Simplificada ({leads.length})
             </CardTitle>
             <CardDescription className='text-blue-600 dark:text-blue-400 mt-1'>
-              🎯 Layout inteligente com probabilidade, urgência, próxima ação e análise contextual completa
+              🎯 Layout limpo e intuitivo: probabilidade, urgência, tempo e próxima ação
             </CardDescription>
           </div>
           <Button
