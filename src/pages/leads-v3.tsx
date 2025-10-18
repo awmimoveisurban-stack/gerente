@@ -81,13 +81,18 @@ import {
 import {
   StandardPageLayout,
   StandardHeader,
-  StandardMetricCard,
   StandardGrid,
   useStandardLayout,
   STANDARD_COLORS,
   LAYOUT_CONFIG,
   STANDARD_ANIMATIONS,
 } from '@/components/layout/standard-layout';
+import { 
+  StandardMetricCard,
+  StandardContentCard,
+  StandardStatCard,
+  StandardContainer 
+} from '@/components/ui/standard-card';
 
 export default function LeadsV3() {
   const { toast } = useToast();
@@ -234,26 +239,26 @@ export default function LeadsV3() {
           <StandardMetricCard
             title="Total de Leads"
             value={personalMetrics.totalLeads}
-            icon={<Users className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.info}
+            icon={Users}
+            color="info"
           />
           <StandardMetricCard
             title="Leads Ativos"
             value={personalMetrics.leadsAtivos}
-            icon={<Target className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.success}
+            icon={Target}
+            color="success"
           />
           <StandardMetricCard
             title="Taxa de Conversão"
             value={`${personalMetrics.taxaConversao.toFixed(1)}%`}
-            icon={<TrendingUp className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.purple}
+            icon={TrendingUp}
+            color="purple"
           />
           <StandardMetricCard
             title="Valor Total"
             value={`R$ ${personalMetrics.valorTotal.toLocaleString()}`}
-            icon={<DollarSign className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.orange}
+            icon={DollarSign}
+            color="orange"
           />
         </StandardGrid>
 
@@ -263,14 +268,11 @@ export default function LeadsV3() {
           animate={STANDARD_ANIMATIONS.pageAnimate}
           transition={{ delay: 0.1 }}
         >
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-blue-500" />
-                Filtros e Busca
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <StandardContentCard
+            title="Filtros e Busca"
+            icon={Filter}
+            color="info"
+          >
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
@@ -310,8 +312,7 @@ export default function LeadsV3() {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+          </StandardContentCard>
         </motion.div>
 
         {/* ✅ TABELA DE LEADS */}
@@ -320,17 +321,12 @@ export default function LeadsV3() {
           animate={STANDARD_ANIMATIONS.pageAnimate}
           transition={{ delay: 0.2 }}
         >
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-green-500" />
-                Seus Leads
-              </CardTitle>
-              <CardDescription>
-                Gerencie seus leads e acompanhe o progresso
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <StandardContentCard
+            title="Seus Leads"
+            description="Gerencie seus leads e acompanhe o progresso"
+            icon={Users}
+            color="primary"
+          >
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -428,8 +424,7 @@ export default function LeadsV3() {
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+          </StandardContentCard>
         </motion.div>
 
         {/* ✅ MODAIS */}

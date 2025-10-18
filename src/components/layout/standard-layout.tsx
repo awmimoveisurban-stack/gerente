@@ -5,18 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { AppLayout } from '@/components/layout/app-layout';
+import { 
+  StandardMetricCard, 
+  StandardContentCard, 
+  StandardStatCard,
+  StandardGrid,
+  StandardContainer,
+  STANDARD_CARD_COLORS,
+  STANDARD_CARD_ANIMATIONS 
+} from '@/components/ui/standard-card';
 
-// 🎨 PALETA DE CORES PADRONIZADA
-export const STANDARD_COLORS = {
-  primary: '#6366F1',      // Indigo mais moderno
-  success: '#10B981',      // Verde mantido
-  warning: '#F59E0B',      // Amarelo mantido
-  danger: '#EF4444',       // Vermelho mantido
-  info: '#3B82F6',         // Azul mantido
-  purple: '#8B5CF6',       // Roxo mantido
-  teal: '#14B8A6',         // Teal mantido
-  orange: '#F97316',       // Laranja mantido
-};
+// 🎨 PALETA DE CORES PADRONIZADA (re-exportada do standard-card)
+export const STANDARD_COLORS = STANDARD_CARD_COLORS;
 
 // 🎯 CONFIGURAÇÕES DE LAYOUT PADRONIZADAS
 export const LAYOUT_CONFIG = {
@@ -115,79 +115,8 @@ export const StandardHeader: React.FC<StandardHeaderProps> = ({
   );
 };
 
-// 📊 COMPONENTE DE CARD MÉTRICA PADRONIZADO
-interface StandardMetricCardProps {
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: React.ReactNode;
-  color: string;
-  trend?: {
-    value: number;
-    label: string;
-    isPositive: boolean;
-  };
-  progress?: number;
-  onClick?: () => void;
-}
-
-export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
-  title,
-  value,
-  subtitle,
-  icon,
-  color,
-  trend,
-  progress,
-  onClick,
-}) => {
-  return (
-    <motion.div
-      whileHover={STANDARD_ANIMATIONS.cardHover}
-      whileTap={STANDARD_ANIMATIONS.cardTap}
-      className='cursor-pointer'
-      onClick={onClick}
-    >
-      <Card className='h-full transition-all duration-200 hover:shadow-lg'>
-        <CardContent className='p-6'>
-          <div className='flex items-center justify-between'>
-            <div className='space-y-2'>
-              <p className='text-sm font-medium text-gray-600 dark:text-gray-400'>
-                {title}
-              </p>
-              <div className='flex items-baseline gap-2'>
-                <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                  {value}
-                </p>
-                {trend && (
-                  <span className={`text-sm font-medium ${
-                    trend.isPositive ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {trend.isPositive ? '+' : ''}{trend.value}%
-                  </span>
-                )}
-              </div>
-              {subtitle && (
-                <p className='text-xs text-gray-500 dark:text-gray-400'>
-                  {subtitle}
-                </p>
-              )}
-              {progress !== undefined && (
-                <Progress value={progress} className='h-2' />
-              )}
-            </div>
-            <div
-              className='w-12 h-12 rounded-lg flex items-center justify-center'
-              style={{ backgroundColor: color }}
-            >
-              {icon}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
+// 📊 COMPONENTE DE CARD MÉTRICA PADRONIZADO (re-exportado do standard-card)
+export { StandardMetricCard } from '@/components/ui/standard-card';
 
 // 🎯 COMPONENTE DE GRID PADRONIZADO
 interface StandardGridProps {

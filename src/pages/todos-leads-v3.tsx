@@ -95,13 +95,18 @@ import {
 import {
   StandardPageLayout,
   StandardHeader,
-  StandardMetricCard,
   StandardGrid,
   useStandardLayout,
   STANDARD_COLORS,
   LAYOUT_CONFIG,
   STANDARD_ANIMATIONS,
 } from '@/components/layout/standard-layout';
+import { 
+  StandardMetricCard,
+  StandardContentCard,
+  StandardStatCard,
+  StandardContainer 
+} from '@/components/ui/standard-card';
 
 export default function TodosLeadsV3() {
   const navigate = useNavigate();
@@ -231,26 +236,26 @@ export default function TodosLeadsV3() {
           <StandardMetricCard
             title="Total de Leads"
             value={metrics?.totalLeads || 0}
-            icon={<Users className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.info}
+            icon={Users}
+            color="info"
           />
           <StandardMetricCard
             title="Leads Ativos"
             value={metrics?.leadsAtivos || 0}
-            icon={<Target className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.success}
+            icon={Target}
+            color="success"
           />
           <StandardMetricCard
             title="Taxa de Conversão"
             value={`${metrics?.taxaConversao?.toFixed(1) || '0.0'}%`}
-            icon={<TrendingUp className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.purple}
+            icon={TrendingUp}
+            color="purple"
           />
           <StandardMetricCard
             title="Valor Total"
             value={`R$ ${metrics?.valorTotal?.toLocaleString() || '0'}`}
-            icon={<DollarSign className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.orange}
+            icon={DollarSign}
+            color="orange"
           />
         </StandardGrid>
 
@@ -275,14 +280,11 @@ export default function TodosLeadsV3() {
           animate={STANDARD_ANIMATIONS.pageAnimate}
           transition={{ delay: 0.2 }}
         >
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-blue-500" />
-                Filtros e Busca
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <StandardContentCard
+            title="Filtros e Busca"
+            icon={Filter}
+            color="info"
+          >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="lg:col-span-2">
                   <div className="relative">
@@ -335,8 +337,7 @@ export default function TodosLeadsV3() {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+          </StandardContentCard>
         </motion.div>
 
         {/* ✅ TABELA DE LEADS */}
@@ -345,17 +346,12 @@ export default function TodosLeadsV3() {
           animate={STANDARD_ANIMATIONS.pageAnimate}
           transition={{ delay: 0.3 }}
         >
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-500" />
-                Todos os Leads
-              </CardTitle>
-              <CardDescription>
-                Gerencie todos os leads da equipe
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <StandardContentCard
+            title="Todos os Leads"
+            description="Gerencie todos os leads da equipe"
+            icon={Users}
+            color="primary"
+          >
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -490,8 +486,7 @@ export default function TodosLeadsV3() {
                   </Pagination>
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </StandardContentCard>
         </motion.div>
 
         {/* ✅ MODAIS */}

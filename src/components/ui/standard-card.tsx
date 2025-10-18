@@ -1,301 +1,380 @@
-/**
- * 🎨 CARD PADRONIZADO DO SISTEMA
- * 
- * Componente de card unificado para manter consistência visual
- * em todas as páginas (Dashboard, Relatórios, Kanban, Equipe, WhatsApp)
- */
-
-import { ReactNode } from 'react';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface StandardCardProps {
-  children: ReactNode;
-  title?: string;
-  description?: string;
-  icon?: ReactNode;
+// 🎨 PALETA DE CORES PADRONIZADA
+export const STANDARD_CARD_COLORS = {
+  primary: '#6366F1',      // Indigo mais moderno
+  secondary: '#6B7280',    // Cinza neutro
+  success: '#10B981',      // Verde
+  warning: '#F59E0B',      // Amarelo
+  danger: '#EF4444',       // Vermelho
+  info: '#3B82F6',         // Azul
+  purple: '#8B5CF6',       // Roxo
+  teal: '#14B8A6',         // Teal
+  orange: '#F97316',       // Laranja
+  background: '#F9FAFB',   // Fundo claro
+  darkBackground: '#111827', // Fundo escuro
+};
+
+// 🎭 ANIMAÇÕES PADRONIZADAS
+export const STANDARD_CARD_ANIMATIONS = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  hover: { scale: 1.02, transition: { duration: 0.2 } },
+  tap: { scale: 0.98 },
+};
+
+// 📐 CONFIGURAÇÕES DE CARD PADRONIZADAS
+export const STANDARD_CARD_CONFIG = {
+  borderRadius: 'rounded-2xl',
+  shadow: 'shadow-lg',
+  border: 'border border-gray-200/50 dark:border-gray-700/50',
+  padding: 'p-6',
+  headerPadding: 'pb-4',
+  contentPadding: 'pt-0',
+  transition: 'transition-all duration-300 ease-out',
+  hoverShadow: 'hover:shadow-xl',
+  hoverBorder: 'hover:border-gray-300/50 dark:hover:border-gray-600/50',
+};
+
+// 🎯 INTERFACE PARA CARD DE MÉTRICA PADRONIZADO
+interface StandardMetricCardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: LucideIcon;
+  color?: keyof typeof STANDARD_CARD_COLORS;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+    label?: string;
+  };
+  progress?: number;
   className?: string;
-  headerClassName?: string;
-  contentClassName?: string;
-  variant?: 'default' | 'gradient' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
+  onClick?: () => void;
+  loading?: boolean;
 }
 
-export function StandardCard({
-  children,
+export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
   title,
-  description,
-  icon,
+  value,
+  subtitle,
+  icon: Icon,
+  color = 'primary',
+  trend,
+  progress,
   className,
-  headerClassName,
-  contentClassName,
-  variant = 'default',
-  size = 'md'
-}: StandardCardProps) {
-  const baseClasses = "bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200";
+  onClick,
+  loading = false,
+}) => {
+  const cardColor = STANDARD_CARD_COLORS[color];
   
-  const variantClasses = {
-    default: baseClasses,
-    gradient: "bg-gradient-to-br from-white/95 to-gray-50/95 dark:from-gray-800/95 dark:to-gray-900/95 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200",
-    outline: "bg-transparent border-2 border-gray-200/50 dark:border-gray-700/50 shadow-none hover:shadow-sm transition-all duration-200"
-  };
-
-  const sizeClasses = {
-    sm: "rounded-lg",
-    md: "rounded-xl", 
-    lg: "rounded-2xl"
-  };
-
-  const paddingClasses = {
-    sm: "p-3 lg:p-4",
-    md: "p-4 lg:p-6",
-    lg: "p-6 lg:p-8"
-  };
+  const CardComponent = onClick ? motion.div : 'div';
+  const cardProps = onClick ? {
+    whileHover: STANDARD_CARD_ANIMATIONS.hover,
+    whileTap: STANDARD_CARD_ANIMATIONS.tap,
+    onClick,
+    className: 'cursor-pointer',
+  } : {};
 
   return (
-    <Card className={cn(
-      variantClasses[variant],
-      sizeClasses[size],
+    <CardComponent {...cardProps}>
+      <Card 
+        className={cn(
+          STANDARD_CARD_CONFIG.borderRadius,
+          STANDARD_CARD_CONFIG.shadow,
+          STANDARD_CARD_CONFIG.border,
+          STANDARD_CARD_CONFIG.transition,
+          onClick && STANDARD_CARD_CONFIG.hoverShadow,
+          onClick && STANDARD_CARD_CONFIG.hoverBorder,
       className
-    )}>
-      {(title || description || icon) && (
-        <CardHeader className={cn(
-          "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200/50 dark:border-gray-700/50",
-          paddingClasses[size],
-          headerClassName
-        )}>
-          <div className="flex items-center gap-3">
-            {icon && (
-              <div className="p-1.5 bg-primary/10 rounded-lg flex-shrink-0">
-                {icon}
-              </div>
+        )}
+      >
+        <CardHeader className={cn(STANDARD_CARD_CONFIG.headerPadding, 'flex flex-row items-center justify-between space-y-0')}>
+          <div className="space-y-1">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+            {title}
+            </CardTitle>
+          {trend && (
+              <div className="flex items-center gap-1">
+                <span className={cn(
+                  'text-xs font-medium',
+                  trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                )}>
+                  {trend.isPositive ? '+' : ''}{trend.value}%
+                </span>
+                {trend.label && (
+                  <span className="text-xs text-muted-foreground">
+                    {trend.label}
+                  </span>
+                )}
+            </div>
+          )}
+        </div>
+          <div 
+            className="p-2 rounded-xl"
+            style={{ backgroundColor: `${cardColor}20` }}
+          >
+            <Icon 
+              className="h-5 w-5" 
+              style={{ color: cardColor }}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className={cn(STANDARD_CARD_CONFIG.contentPadding)}>
+          <div className="space-y-2">
+            {loading ? (
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            ) : (
+              <div className="text-2xl font-bold text-foreground">
+                {value}
+        </div>
             )}
-            <div className="flex-1 min-w-0">
-              {title && (
-                <CardTitle className="text-lg lg:text-xl font-bold text-gray-900 dark:text-white">
-                  {title}
-                </CardTitle>
-              )}
+            {subtitle && (
+              <p className="text-xs text-muted-foreground">
+                {subtitle}
+              </p>
+            )}
+            {progress !== undefined && (
+              <Progress 
+                value={progress} 
+                className="h-2"
+                style={{ 
+                  '--progress-background': `${cardColor}20`,
+                  '--progress-foreground': cardColor,
+                } as React.CSSProperties}
+              />
+            )}
+      </div>
+        </CardContent>
+      </Card>
+    </CardComponent>
+  );
+};
+
+// 🎯 INTERFACE PARA CARD DE CONTEÚDO PADRONIZADO
+interface StandardContentCardProps {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  icon?: LucideIcon;
+  color?: keyof typeof STANDARD_CARD_COLORS;
+  className?: string;
+  headerActions?: React.ReactNode;
+  loading?: boolean;
+}
+
+export const StandardContentCard: React.FC<StandardContentCardProps> = ({
+  title,
+  description,
+  children,
+  icon: Icon,
+  color = 'primary',
+  className,
+  headerActions,
+  loading = false,
+}) => {
+  const cardColor = STANDARD_CARD_COLORS[color];
+
+  return (
+    <Card 
+      className={cn(
+        STANDARD_CARD_CONFIG.borderRadius,
+        STANDARD_CARD_CONFIG.shadow,
+        STANDARD_CARD_CONFIG.border,
+        STANDARD_CARD_CONFIG.transition,
+      className
+      )}
+    >
+      <CardHeader className={cn(STANDARD_CARD_CONFIG.headerPadding)}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {Icon && (
+              <div 
+                className="p-2 rounded-xl"
+                style={{ backgroundColor: `${cardColor}20` }}
+              >
+                <Icon 
+                  className="h-5 w-5" 
+                  style={{ color: cardColor }}
+                />
+            </div>
+            )}
+            <div>
+              <CardTitle className="text-lg font-semibold text-foreground">
+                {title}
+              </CardTitle>
               {description && (
-                <CardDescription className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
+                <CardDescription className="text-sm text-muted-foreground mt-1">
                   {description}
                 </CardDescription>
               )}
             </div>
           </div>
-        </CardHeader>
-      )}
-      <CardContent className={cn(
-        paddingClasses[size],
-        contentClassName
-      )}>
-        {children}
+          {headerActions && (
+            <div className="flex items-center gap-2">
+              {headerActions}
+          </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className={cn(STANDARD_CARD_CONFIG.contentPadding)}>
+        {loading ? (
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2" />
+          </div>
+        ) : (
+          children
+        )}
       </CardContent>
     </Card>
   );
-}
+};
 
-interface MetricCardProps {
+// 🎯 INTERFACE PARA CARD DE ESTATÍSTICA PADRONIZADO
+interface StandardStatCardProps {
   title: string;
   value: string | number;
-  subtitle?: string;
-  icon: ReactNode;
-  color?: 'violet' | 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'emerald';
-  trend?: {
-    value: string;
+  change?: {
+    value: number;
     isPositive: boolean;
+    period?: string;
   };
-  progress?: number;
+  icon: LucideIcon;
+  color?: keyof typeof STANDARD_CARD_COLORS;
   className?: string;
+  onClick?: () => void;
 }
 
-export function MetricCard({
+export const StandardStatCard: React.FC<StandardStatCardProps> = ({
   title,
   value,
-  subtitle,
-  icon,
-  color = 'blue',
-  trend,
-  progress,
-  className
-}: MetricCardProps) {
-  const colorClasses = {
-    violet: {
-      bg: 'from-violet-50 to-violet-100 dark:from-violet-950/30 dark:to-violet-900/30',
-      border: 'border-violet-200/50 dark:border-violet-800/50',
-      text: 'text-violet-700 dark:text-violet-300',
-      value: 'text-violet-900 dark:text-violet-100',
-      subtitle: 'text-violet-600 dark:text-violet-400',
-      icon: 'bg-violet-500',
-      dot: 'bg-violet-500'
-    },
-    blue: {
-      bg: 'from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30',
-      border: 'border-blue-200/50 dark:border-blue-800/50',
-      text: 'text-blue-700 dark:text-blue-300',
-      value: 'text-blue-900 dark:text-blue-100',
-      subtitle: 'text-blue-600 dark:text-blue-400',
-      icon: 'bg-blue-500',
-      dot: 'bg-blue-500'
-    },
-    green: {
-      bg: 'from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30',
-      border: 'border-green-200/50 dark:border-green-800/50',
-      text: 'text-green-700 dark:text-green-300',
-      value: 'text-green-900 dark:text-green-100',
-      subtitle: 'text-green-600 dark:text-green-400',
-      icon: 'bg-green-500',
-      dot: 'bg-green-500'
-    },
-    amber: {
-      bg: 'from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/30',
-      border: 'border-amber-200/50 dark:border-amber-800/50',
-      text: 'text-amber-700 dark:text-amber-300',
-      value: 'text-amber-900 dark:text-amber-100',
-      subtitle: 'text-amber-600 dark:text-amber-400',
-      icon: 'bg-amber-500',
-      dot: 'bg-amber-500'
-    },
-    red: {
-      bg: 'from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30',
-      border: 'border-red-200/50 dark:border-red-800/50',
-      text: 'text-red-700 dark:text-red-300',
-      value: 'text-red-900 dark:text-red-100',
-      subtitle: 'text-red-600 dark:text-red-400',
-      icon: 'bg-red-500',
-      dot: 'bg-red-500'
-    },
-    purple: {
-      bg: 'from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30',
-      border: 'border-purple-200/50 dark:border-purple-800/50',
-      text: 'text-purple-700 dark:text-purple-300',
-      value: 'text-purple-900 dark:text-purple-100',
-      subtitle: 'text-purple-600 dark:text-purple-400',
-      icon: 'bg-purple-500',
-      dot: 'bg-purple-500'
-    },
-    emerald: {
-      bg: 'from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/30',
-      border: 'border-emerald-200/50 dark:border-emerald-800/50',
-      text: 'text-emerald-700 dark:text-emerald-300',
-      value: 'text-emerald-900 dark:text-emerald-100',
-      subtitle: 'text-emerald-600 dark:text-emerald-400',
-      icon: 'bg-emerald-500',
-      dot: 'bg-emerald-500'
-    }
-  };
-
-  const colors = colorClasses[color];
-
-  return (
-    <div className={cn(
-      "bg-gradient-to-br p-4 lg:p-6 rounded-xl border hover:shadow-md transition-all duration-200",
-      colors.bg,
-      colors.border,
-      className
-    )}>
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <p className={cn("text-xs lg:text-sm font-semibold", colors.text)}>
-            {title}
-          </p>
-          <p className={cn("text-2xl lg:text-3xl font-bold mt-1", colors.value)}>
-            {value}
-          </p>
-          {subtitle && (
-            <p className={cn("text-xs mt-2 flex items-center gap-1", colors.subtitle)}>
-              <span className={cn("w-2 h-2 rounded-full", colors.dot)}></span>
-              {subtitle}
-            </p>
-          )}
-          {trend && (
-            <p className={cn(
-              "text-xs mt-2 flex items-center gap-1",
-              trend.isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-            )}>
-              <span className={cn(
-                "w-2 h-2 rounded-full",
-                trend.isPositive ? "bg-green-500" : "bg-red-500"
-              )}></span>
-              {trend.value}
-            </p>
-          )}
-          {progress !== undefined && (
-            <div className="mt-2">
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className={cn("h-2 rounded-full transition-all duration-300", colors.icon)}
-                  style={{ width: `${Math.min(progress, 100)}%` }}
-                ></div>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className={cn("p-2 lg:p-3 rounded-xl flex-shrink-0 ml-3", colors.icon)}>
-          <div className="text-white">
-            {icon}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface ActionCardProps {
-  title: string;
-  description?: string;
-  icon: ReactNode;
-  action: ReactNode;
-  className?: string;
-  variant?: 'default' | 'success' | 'warning' | 'error';
-}
-
-export function ActionCard({
-  title,
-  description,
-  icon,
-  action,
+  change,
+  icon: Icon,
+  color = 'primary',
   className,
-  variant = 'default'
-}: ActionCardProps) {
-  const variantClasses = {
-    default: "bg-white/95 dark:bg-gray-800/95 border-gray-200/50 dark:border-gray-700/50",
-    success: "bg-green-50/80 dark:bg-green-950/20 border-green-200/50 dark:border-green-800/50",
-    warning: "bg-amber-50/80 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-800/50",
-    error: "bg-red-50/80 dark:bg-red-950/20 border-red-200/50 dark:border-red-800/50"
-  };
+  onClick,
+}) => {
+  const cardColor = STANDARD_CARD_COLORS[color];
+  
+  const CardComponent = onClick ? motion.div : 'div';
+  const cardProps = onClick ? {
+    whileHover: STANDARD_CARD_ANIMATIONS.hover,
+    whileTap: STANDARD_CARD_ANIMATIONS.tap,
+    onClick,
+    className: 'cursor-pointer',
+  } : {};
 
   return (
-    <Card className={cn(
-      "backdrop-blur-sm border shadow-sm hover:shadow-md transition-all duration-200",
-      variantClasses[variant],
-      className
-    )}>
-      <CardContent className="p-4 lg:p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-              {icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 dark:text-white text-sm lg:text-base">
+    <CardComponent {...cardProps}>
+      <Card 
+        className={cn(
+          STANDARD_CARD_CONFIG.borderRadius,
+          STANDARD_CARD_CONFIG.shadow,
+          STANDARD_CARD_CONFIG.border,
+          STANDARD_CARD_CONFIG.transition,
+          onClick && STANDARD_CARD_CONFIG.hoverShadow,
+          onClick && STANDARD_CARD_CONFIG.hoverBorder,
+          className
+        )}
+      >
+        <CardContent className={cn(STANDARD_CARD_CONFIG.padding)}>
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">
                 {title}
-              </h3>
-              {description && (
-                <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {description}
-                </p>
+              </p>
+              <div className="text-2xl font-bold text-foreground">
+                {value}
+              </div>
+              {change && (
+                <div className="flex items-center gap-1">
+                  <span className={cn(
+                    'text-xs font-medium',
+                    change.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  )}>
+                    {change.isPositive ? '+' : ''}{change.value}%
+                  </span>
+                  {change.period && (
+                    <span className="text-xs text-muted-foreground">
+                      {change.period}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
+            <div 
+              className="p-3 rounded-xl"
+              style={{ backgroundColor: `${cardColor}20` }}
+            >
+              <Icon 
+                className="h-6 w-6" 
+                style={{ color: cardColor }}
+              />
+            </div>
           </div>
-          <div className="flex-shrink-0 ml-3">
-            {action}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </CardComponent>
   );
+};
+
+// 🎯 COMPONENTE DE GRID PADRONIZADO
+interface StandardGridProps {
+  children: React.ReactNode;
+  columns?: '1' | '2' | '3' | '4' | '5' | '6';
+  className?: string;
 }
 
+export const StandardGrid: React.FC<StandardGridProps> = ({
+  children,
+  columns = '4',
+  className,
+}) => {
+  const gridClasses = {
+    '1': 'grid grid-cols-1',
+    '2': 'grid grid-cols-1 md:grid-cols-2',
+    '3': 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+    '4': 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+    '5': 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
+    '6': 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6',
+  };
 
+  return (
+    <div className={cn(gridClasses[columns], 'gap-6', className)}>
+      {children}
+    </div>
+  );
+};
 
+// 🎯 COMPONENTE DE CONTAINER PADRONIZADO
+interface StandardContainerProps {
+  children: React.ReactNode;
+  className?: string;
+  spacing?: 'sm' | 'md' | 'lg';
+}
+
+export const StandardContainer: React.FC<StandardContainerProps> = ({
+  children,
+  className,
+  spacing = 'md',
+}) => {
+  const spacingClasses = {
+    sm: 'space-y-4',
+    md: 'space-y-6',
+    lg: 'space-y-8',
+  };
+
+  return (
+    <div className={cn(spacingClasses[spacing], className)}>
+      {children}
+    </div>
+  );
+};
