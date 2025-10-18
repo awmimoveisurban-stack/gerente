@@ -42,10 +42,30 @@ SELECT COUNT(*) as logs_orfanos_removidos FROM public.lead_audit_log
 WHERE lead_id NOT IN (SELECT id FROM public.leads);
 
 -- 4. DESABILITAR TRIGGER TEMPORARIAMENTE (OPCIONAL)
-SELECT 'DESABILITANDO TRIGGER TEMPORARIAMENTE' as status;
+SELECT 'VERIFICANDO E DESABILITANDO TRIGGER' as status;
 
--- Desabilitar trigger para evitar problemas durante testes
-ALTER TABLE public.leads DISABLE TRIGGER trigger_lead_audit;
+-- Verificar se o trigger existe antes de desabilitar
+SELECT 
+    tgname as trigger_name,
+    tgrelid::regclass as table_name,
+    tgenabled as enabled
+FROM pg_trigger 
+WHERE tgname = 'trigger_lead_audit' AND tgrelid = 'public.leads'::regclass;
+
+-- Desabilitar trigger apenas se ele existir
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_trigger 
+        WHERE tgname = 'trigger_lead_audit' 
+        AND tgrelid = 'public.leads'::regclass
+    ) THEN
+        ALTER TABLE public.leads DISABLE TRIGGER trigger_lead_audit;
+        RAISE NOTICE 'Trigger trigger_lead_audit desabilitado temporariamente';
+    ELSE
+        RAISE NOTICE 'Trigger trigger_lead_audit não existe, pulando desabilitação';
+    END IF;
+END $$;
 
 -- 5. TESTE SIMPLES
 SELECT 'TESTANDO CORREÇÃO' as status;
@@ -132,10 +152,22 @@ FROM pg_constraint
 WHERE conname = 'lead_audit_log_lead_id_fkey';
 
 -- 7. REABILITAR TRIGGER (OPCIONAL)
-SELECT 'REABILITANDO TRIGGER' as status;
+SELECT 'VERIFICANDO E REABILITANDO TRIGGER' as status;
 
--- Reabilitar trigger se necessário
-ALTER TABLE public.leads ENABLE TRIGGER trigger_lead_audit;
+-- Reabilitar trigger apenas se ele existir
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_trigger 
+        WHERE tgname = 'trigger_lead_audit' 
+        AND tgrelid = 'public.leads'::regclass
+    ) THEN
+        ALTER TABLE public.leads ENABLE TRIGGER trigger_lead_audit;
+        RAISE NOTICE 'Trigger trigger_lead_audit reabilitado';
+    ELSE
+        RAISE NOTICE 'Trigger trigger_lead_audit não existe, pulando reabilitação';
+    END IF;
+END $$;
 
 -- 8. RELATÓRIO FINAL
 SELECT 'CORREÇÃO SIMPLES CONCLUÍDA!' as status;
