@@ -52,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_lead_audit_log_lead_action_date ON public.lead_au
 ALTER TABLE public.lead_audit_log ENABLE ROW LEVEL SECURITY;
 
 -- Política para gerentes: podem ver todos os logs
+DROP POLICY IF EXISTS "Gerentes podem ver todos os logs" ON public.lead_audit_log;
 CREATE POLICY "Gerentes podem ver todos os logs" ON public.lead_audit_log
     FOR ALL TO authenticated
     USING (
@@ -64,6 +65,7 @@ CREATE POLICY "Gerentes podem ver todos os logs" ON public.lead_audit_log
     );
 
 -- Política para corretores: podem ver apenas logs de seus leads
+DROP POLICY IF EXISTS "Corretores podem ver logs de seus leads" ON public.lead_audit_log;
 CREATE POLICY "Corretores podem ver logs de seus leads" ON public.lead_audit_log
     FOR ALL TO authenticated
     USING (
@@ -82,6 +84,7 @@ CREATE POLICY "Corretores podem ver logs de seus leads" ON public.lead_audit_log
     );
 
 -- Política para sistema: pode inserir logs
+DROP POLICY IF EXISTS "Sistema pode inserir logs" ON public.lead_audit_log;
 CREATE POLICY "Sistema pode inserir logs" ON public.lead_audit_log
     FOR INSERT TO authenticated
     WITH CHECK (true);

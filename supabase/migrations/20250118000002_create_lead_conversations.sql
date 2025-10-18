@@ -56,6 +56,7 @@ CREATE TRIGGER trigger_update_lead_conversations_updated_at
 ALTER TABLE public.lead_conversations ENABLE ROW LEVEL SECURITY;
 
 -- Política para gerentes: podem ver todas as conversas
+DROP POLICY IF EXISTS "Gerentes podem ver todas as conversas" ON public.lead_conversations;
 CREATE POLICY "Gerentes podem ver todas as conversas" ON public.lead_conversations
     FOR ALL TO authenticated
     USING (
@@ -68,6 +69,7 @@ CREATE POLICY "Gerentes podem ver todas as conversas" ON public.lead_conversatio
     );
 
 -- Política para corretores: podem ver apenas conversas de seus leads
+DROP POLICY IF EXISTS "Corretores podem ver conversas de seus leads" ON public.lead_conversations;
 CREATE POLICY "Corretores podem ver conversas de seus leads" ON public.lead_conversations
     FOR ALL TO authenticated
     USING (
@@ -86,6 +88,7 @@ CREATE POLICY "Corretores podem ver conversas de seus leads" ON public.lead_conv
     );
 
 -- Política para sistema: pode inserir conversas
+DROP POLICY IF EXISTS "Sistema pode inserir conversas" ON public.lead_conversations;
 CREATE POLICY "Sistema pode inserir conversas" ON public.lead_conversations
     FOR INSERT TO authenticated
     WITH CHECK (true);
@@ -110,3 +113,4 @@ BEGIN
     RAISE NOTICE '   - Auditoria temporal';
     RAISE NOTICE '';
 END $$;
+
