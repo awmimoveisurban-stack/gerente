@@ -217,26 +217,26 @@ export default function GerenteRelatorios() {
           <StandardMetricCard
             title="Total de Leads"
             value={totalLeads}
-            icon={<Users className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.info}
+            icon={Users}
+            color="info"
           />
           <StandardMetricCard
             title="Leads Fechados"
             value={leadsFechados}
-            icon={<Target className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.success}
+            icon={Target}
+            color="success"
           />
           <StandardMetricCard
             title="Taxa de Conversão"
             value={`${taxaConversao}%`}
-            icon={<TrendingUp className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.purple}
+            icon={TrendingUp}
+            color="purple"
           />
           <StandardMetricCard
             title="Valor Vendido"
             value={`R$ ${(valorTotalVendas || 0).toLocaleString()}`}
-            icon={<DollarSign className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.orange}
+            icon={DollarSign}
+            color="orange"
           />
         </StandardGrid>
 

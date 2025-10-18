@@ -72,7 +72,7 @@ export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
   onClick,
   loading = false,
 }) => {
-  const cardColor = STANDARD_CARD_COLORS[color];
+  const cardColor = STANDARD_CARD_COLORS[color] || STANDARD_CARD_COLORS.primary;
   
   const CardComponent = onClick ? motion.div : 'div';
   const cardProps = onClick ? {
@@ -193,7 +193,7 @@ export const StandardContentCard: React.FC<StandardContentCardProps> = ({
   headerActions,
   loading = false,
 }) => {
-  const cardColor = STANDARD_CARD_COLORS[color];
+  const cardColor = STANDARD_CARD_COLORS[color] || STANDARD_CARD_COLORS.primary;
 
   return (
     <Card 
@@ -276,7 +276,7 @@ export const StandardStatCard: React.FC<StandardStatCardProps> = ({
   className,
   onClick,
 }) => {
-  const cardColor = STANDARD_CARD_COLORS[color];
+  const cardColor = STANDARD_CARD_COLORS[color] || STANDARD_CARD_COLORS.primary;
   
   const CardComponent = onClick ? motion.div : 'div';
   const cardProps = onClick ? {

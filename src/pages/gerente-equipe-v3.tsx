@@ -234,26 +234,26 @@ export default function GerenteEquipe() {
           <StandardMetricCard
             title="Total de Membros"
             value={metrics.totalMembros}
-            icon={<Users className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.info}
+            icon={Users}
+            color="info"
           />
           <StandardMetricCard
             title="Membros Ativos"
             value={metrics.membrosAtivos}
-            icon={<Target className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.success}
+            icon={Target}
+            color="success"
           />
           <StandardMetricCard
             title="Total de Leads"
             value={metrics.totalLeads}
-            icon={<BarChart3 className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.purple}
+            icon={BarChart3}
+            color="purple"
           />
           <StandardMetricCard
             title="Valor Vendido"
             value={`R$ ${(metrics.valorTotalVendido || 0).toLocaleString()}`}
-            icon={<DollarSign className="h-6 w-6 text-white" />}
-            color={STANDARD_COLORS.orange}
+            icon={DollarSign}
+            color="orange"
           />
         </StandardGrid>
 
