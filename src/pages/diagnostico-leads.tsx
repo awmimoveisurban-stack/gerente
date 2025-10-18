@@ -124,7 +124,7 @@ export default function DiagnosticoLeads() {
       const { data: leads, error: leadsError } = await supabase
         .from('leads')
         .select('*')
-        .eq('manager_id', user?.id)
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
         .limit(10);
 

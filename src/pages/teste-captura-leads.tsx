@@ -148,11 +148,8 @@ export default function TesteCapturaLeads() {
         telefone: testPhone,
         origem: 'teste_manual',
         status: 'novo',
-        score_ia: 85,
-        prioridade: 'alta',
         observacoes: 'Lead criado via teste manual',
-        manager_id: whatsappConfig?.manager_id || null,
-        atribuido_a: whatsappConfig?.manager_id || null,
+        user_id: user?.id || null,
       };
 
       const { data: lead, error: leadError } = await supabase
