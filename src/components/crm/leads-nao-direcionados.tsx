@@ -58,7 +58,7 @@ export function LeadsNaoDirecionados({
   const [isAssigning, setIsAssigning] = useState(false);
 
   // Filtrar leads não direcionados (sem corretor ou com status 'novo' e sem corretor)
-  const leadsNaoDirecionados = leads.filter(
+  const leadsNaoDirecionados = (leads || []).filter(
     lead => !lead.corretor || lead.corretor === '' || lead.corretor === null
   );
 

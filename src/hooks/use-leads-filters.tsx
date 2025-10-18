@@ -45,9 +45,9 @@ export function useLeadsFilters(
   }, []);
 
   const filteredLeads = useMemo(() => {
-    return leads.filter(lead => {
+    return (leads || []).filter(lead => {
       const matchesSearch =
-        lead.nome.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        lead.nome?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
         (lead.email &&
           lead.email
             .toLowerCase()
@@ -64,8 +64,8 @@ export function useLeadsFilters(
 
   const getStatusCount = useCallback(
     (status: string) => {
-      if (status === 'todos') return leads.length;
-      return leads.filter(lead => lead.status === status).length;
+      if (status === 'todos') return (leads || []).length;
+      return (leads || []).filter(lead => lead.status === status).length;
     },
     [leads]
   );

@@ -114,7 +114,7 @@ export default function LeadsV3() {
 
   // ✅ CALCULAR MÉTRICAS PESSOAIS
   const personalMetrics = useMemo(() => {
-    const userLeads = leads.filter(lead => lead.user_id === user?.id);
+    const userLeads = (leads || []).filter(lead => lead.user_id === user?.id);
     const totalLeads = userLeads.length;
     const leadsAtivos = userLeads.filter(lead => lead.status === 'ativo').length;
     const leadsConvertidos = userLeads.filter(lead => lead.status === 'convertido').length;

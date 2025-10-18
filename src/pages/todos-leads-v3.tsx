@@ -131,9 +131,9 @@ export default function TodosLeadsV3() {
 
   // ✅ FILTRAR LEADS
   const filteredLeads = useMemo(() => {
-    return leads.filter(lead => {
+    return (leads || []).filter(lead => {
       const matchesSearch = !searchTerm || 
-        lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        lead.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lead.telefone?.includes(searchTerm) ||
         lead.email?.toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -261,7 +261,11 @@ export default function TodosLeadsV3() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
-          <LeadsNaoDirecionados />
+          <LeadsNaoDirecionados 
+            leads={leads || []}
+            corretores={corretores || []}
+            onLeadAtribuido={() => refetch()}
+          />
           <MonitorLigacoes />
         </motion.div>
 
