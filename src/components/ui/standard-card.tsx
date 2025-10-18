@@ -42,7 +42,7 @@ export const STANDARD_CARD_CONFIG = {
   hoverBorder: 'hover:border-gray-300/50 dark:hover:border-gray-600/50',
 };
 
-// 🎯 INTERFACE PARA CARD DE MÉTRICA PADRONIZADO
+// 🎯 INTERFACE PARA CARD DE MÉTRICA PADRONIZADO (BASEADO NA IMAGEM)
 interface StandardMetricCardProps {
   title: string;
   value: string | number;
@@ -52,7 +52,7 @@ interface StandardMetricCardProps {
   trend?: {
     value: number;
     isPositive: boolean;
-    label?: string;
+    period?: string;
   };
   progress?: number;
   className?: string;
@@ -86,71 +86,85 @@ export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
     <CardComponent {...cardProps}>
       <Card 
         className={cn(
-          STANDARD_CARD_CONFIG.borderRadius,
-          STANDARD_CARD_CONFIG.shadow,
-          STANDARD_CARD_CONFIG.border,
-          STANDARD_CARD_CONFIG.transition,
-          onClick && STANDARD_CARD_CONFIG.hoverShadow,
-          onClick && STANDARD_CARD_CONFIG.hoverBorder,
-      className
+          'h-full transition-all duration-300 ease-out',
+          'border-2', // Borda mais espessa como na imagem
+          onClick && 'hover:shadow-xl hover:scale-105',
+          className
         )}
+        style={{ borderColor: `${cardColor}40` }} // Borda colorida sutil
       >
-        <CardHeader className={cn(STANDARD_CARD_CONFIG.headerPadding, 'flex flex-row items-center justify-between space-y-0')}>
-          <div className="space-y-1">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-            {title}
-            </CardTitle>
-          {trend && (
-              <div className="flex items-center gap-1">
-                <span className={cn(
-                  'text-xs font-medium',
-                  trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                )}>
-                  {trend.isPositive ? '+' : ''}{trend.value}%
-                </span>
-                {trend.label && (
-                  <span className="text-xs text-muted-foreground">
-                    {trend.label}
-                  </span>
-                )}
-            </div>
-          )}
-        </div>
-          <div 
-            className="p-2 rounded-xl"
-            style={{ backgroundColor: `${cardColor}20` }}
-          >
-            <Icon 
-              className="h-5 w-5" 
-              style={{ color: cardColor }}
-            />
-          </div>
-        </CardHeader>
-        <CardContent className={cn(STANDARD_CARD_CONFIG.contentPadding)}>
-          <div className="space-y-2">
-            {loading ? (
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-            ) : (
-              <div className="text-2xl font-bold text-foreground">
-                {value}
-        </div>
-            )}
-            {subtitle && (
-              <p className="text-xs text-muted-foreground">
-                {subtitle}
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between h-full">
+            {/* CONTEÚDO PRINCIPAL (ESQUERDA) */}
+            <div className="flex-1 space-y-3">
+              {/* TÍTULO */}
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {title}
               </p>
-            )}
-            {progress !== undefined && (
-              <Progress 
-                value={progress} 
-                className="h-2"
-                style={{ 
-                  '--progress-background': `${cardColor}20`,
-                  '--progress-foreground': cardColor,
-                } as React.CSSProperties}
+              
+              {/* MÉTRICA PRINCIPAL */}
+              {loading ? (
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              ) : (
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {value}
+                </div>
+              )}
+              
+              {/* DESCRIÇÃO */}
+              {subtitle && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {subtitle}
+                </p>
+              )}
+              
+              {/* TREND INDICATOR */}
+              {trend && (
+                <div className="flex items-center gap-1">
+                  <div className={cn(
+                    'flex items-center gap-1 text-sm font-medium',
+                    trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  )}>
+                    <div className={cn(
+                      'w-0 h-0 border-l-2 border-r-2 border-b-2 border-transparent',
+                      trend.isPositive ? 'border-b-green-600' : 'border-b-red-600'
+                    )} />
+                    <span>
+                      {trend.isPositive ? '+' : ''}{trend.value}%
+                    </span>
+                  </div>
+                  {trend.period && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {trend.period}
+                    </span>
+                  )}
+                </div>
+              )}
+              
+              {/* PROGRESS BAR */}
+              {progress !== undefined && (
+                <Progress 
+                  value={progress} 
+                  className="h-2 mt-2"
+                  style={{ 
+                    '--progress-background': `${cardColor}20`,
+                    '--progress-foreground': cardColor,
+                  } as React.CSSProperties}
+                />
+              )}
+            </div>
+            
+            {/* ÍCONE (DIREITA) */}
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center ml-4"
+              style={{ backgroundColor: `${cardColor}15` }}
+            >
+              <Icon 
+                className="h-8 w-8" 
+                style={{ color: cardColor }}
               />
-            )}
-      </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </CardComponent>

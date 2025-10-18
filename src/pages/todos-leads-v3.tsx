@@ -236,26 +236,50 @@ export default function TodosLeadsV3() {
           <StandardMetricCard
             title="Total de Leads"
             value={metrics?.totalLeads || 0}
+            subtitle="Todos os leads"
             icon={Users}
-            color="info"
+            color="purple"
+            trend={{
+              value: 12,
+              isPositive: true,
+              period: "este mês"
+            }}
           />
           <StandardMetricCard
-            title="Leads Ativos"
-            value={metrics?.leadsAtivos || 0}
+            title="Leads Fechados"
+            value={metrics?.leadsConvertidos || 0}
+            subtitle="Vendas concluídas"
             icon={Target}
             color="success"
+            trend={{
+              value: 8,
+              isPositive: true,
+              period: "esta semana"
+            }}
           />
           <StandardMetricCard
             title="Taxa de Conversão"
             value={`${metrics?.taxaConversao?.toFixed(1) || '0.0'}%`}
+            subtitle="Performance geral"
             icon={TrendingUp}
-            color="purple"
+            color="orange"
+            trend={{
+              value: 3,
+              isPositive: true,
+              period: "vs mês anterior"
+            }}
           />
           <StandardMetricCard
-            title="Valor Total"
-            value={`R$ ${metrics?.valorTotal?.toLocaleString() || '0'}`}
-            icon={DollarSign}
-            color="orange"
+            title="Corretores Ativos"
+            value={corretores?.length || 0}
+            subtitle="Equipe trabalhando"
+            icon={Users}
+            color="info"
+            trend={{
+              value: 2,
+              isPositive: true,
+              period: "novos este mês"
+            }}
           />
         </StandardGrid>
 

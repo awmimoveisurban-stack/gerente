@@ -239,26 +239,50 @@ export default function LeadsV3() {
           <StandardMetricCard
             title="Total de Leads"
             value={personalMetrics.totalLeads}
+            subtitle="Seus leads"
             icon={Users}
-            color="info"
+            color="purple"
+            trend={{
+              value: 15,
+              isPositive: true,
+              period: "este mês"
+            }}
           />
           <StandardMetricCard
             title="Leads Ativos"
             value={personalMetrics.leadsAtivos}
+            subtitle="Em andamento"
             icon={Target}
             color="success"
+            trend={{
+              value: 5,
+              isPositive: true,
+              period: "esta semana"
+            }}
           />
           <StandardMetricCard
             title="Taxa de Conversão"
             value={`${personalMetrics.taxaConversao.toFixed(1)}%`}
+            subtitle="Sua performance"
             icon={TrendingUp}
-            color="purple"
+            color="orange"
+            trend={{
+              value: 2,
+              isPositive: true,
+              period: "vs mês anterior"
+            }}
           />
           <StandardMetricCard
             title="Valor Total"
             value={`R$ ${personalMetrics.valorTotal.toLocaleString()}`}
+            subtitle="Potencial de vendas"
             icon={DollarSign}
-            color="orange"
+            color="info"
+            trend={{
+              value: 18,
+              isPositive: true,
+              period: "novos este mês"
+            }}
           />
         </StandardGrid>
 

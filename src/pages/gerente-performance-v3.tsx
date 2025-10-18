@@ -53,13 +53,18 @@ import {
 import {
   StandardPageLayout,
   StandardHeader,
-  StandardMetricCard,
   StandardGrid,
   useStandardLayout,
   STANDARD_COLORS,
   LAYOUT_CONFIG,
   STANDARD_ANIMATIONS,
 } from '@/components/layout/standard-layout';
+import { 
+  StandardMetricCard,
+  StandardContentCard,
+  StandardStatCard,
+  StandardContainer 
+} from '@/components/ui/standard-card';
 import { ManagerRoute } from '@/components/layout/auth-middleware';
 
 export default function GerentePerformance() {
@@ -207,26 +212,50 @@ export default function GerentePerformance() {
             <StandardMetricCard
               title="Total de Corretores"
               value={metrics.totalCorretores}
-              icon={<Users className="h-6 w-6 text-white" />}
-              color={STANDARD_COLORS.info}
+              subtitle="Equipe ativa"
+              icon={Users}
+              color="info"
+              trend={{
+                value: 2,
+                isPositive: true,
+                period: "novos este mês"
+              }}
             />
             <StandardMetricCard
               title="Taxa Média de Conversão"
               value={`${metrics.taxaMediaConversao.toFixed(1)}%`}
-              icon={<Target className="h-6 w-6 text-white" />}
-              color={STANDARD_COLORS.success}
+              subtitle="Performance geral"
+              icon={TrendingUp}
+              color="orange"
+              trend={{
+                value: 3,
+                isPositive: true,
+                period: "vs mês anterior"
+              }}
             />
             <StandardMetricCard
               title="Valor Total Vendido"
               value={`R$ ${metrics.valorTotalVendido.toLocaleString()}`}
-              icon={<DollarSign className="h-6 w-6 text-white" />}
-              color={STANDARD_COLORS.purple}
+              subtitle="Receita gerada"
+              icon={DollarSign}
+              color="success"
+              trend={{
+                value: 12,
+                isPositive: true,
+                period: "este mês"
+              }}
             />
             <StandardMetricCard
               title="Tempo Médio de Resposta"
               value={`${metrics.tempoMedioResposta}h`}
-              icon={<Clock className="h-6 w-6 text-white" />}
-              color={STANDARD_COLORS.orange}
+              subtitle="Eficiência da equipe"
+              icon={Clock}
+              color="purple"
+              trend={{
+                value: 8,
+                isPositive: true,
+                period: "melhoria esta semana"
+              }}
             />
           </StandardGrid>
         )}
