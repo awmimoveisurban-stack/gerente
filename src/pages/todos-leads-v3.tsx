@@ -541,24 +541,22 @@ export default function TodosLeadsV3() {
               )}
               
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Contato</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Origem</TableHead>
-                      <TableHead>Corretor</TableHead>
-                      <TableHead>Score</TableHead>
-                      <TableHead>Última Interação</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      <TableHead className="w-1/4">Nome</TableHead>
+                      <TableHead className="w-1/5">Contato</TableHead>
+                      <TableHead className="w-1/6">Corretor</TableHead>
+                      <TableHead className="w-1/12">Score</TableHead>
+                      <TableHead className="w-1/6">Última Interação</TableHead>
+                      <TableHead className="w-1/12 text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {/* ✅ ESTADO VAZIO COM LOADING */}
                     {filteredLeads.length === 0 && !loading && !isFiltering && !isSearching ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8">
+                        <TableCell colSpan={6} className="text-center py-8">
                           <div className="flex flex-col items-center space-y-2">
                             <Users className="h-8 w-8 text-gray-400" />
                             <p className="text-gray-500">Nenhum lead encontrado</p>
@@ -570,66 +568,67 @@ export default function TodosLeadsV3() {
                       </TableRow>
                     ) : paginatedData.map((lead) => (
                       <TableRow key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium py-4">
                           <div>
-                            <div className="font-semibold">{lead.nome}</div>
+                            <div className="font-semibold text-lg">{lead.nome}</div>
                             {lead.email && (
-                              <div className="text-sm text-gray-500">{lead.email}</div>
+                              <div className="text-sm text-gray-500 mt-1">{lead.email}</div>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
+                        <TableCell className="py-4">
+                          <div className="space-y-2">
                             {lead.telefone && (
-                              <div className="flex items-center gap-1 text-sm">
-                                <Phone className="h-3 w-3" />
-                                {lead.telefone}
+                              <div className="flex items-center gap-2 text-sm">
+                                <Phone className="h-4 w-4 text-blue-500" />
+                                <span className="font-medium">{lead.telefone}</span>
                               </div>
                             )}
                             {lead.email && (
-                              <div className="flex items-center gap-1 text-sm">
-                                <Mail className="h-3 w-3" />
-                                {lead.email}
+                              <div className="flex items-center gap-2 text-sm">
+                                <Mail className="h-4 w-4 text-green-500" />
+                                <span className="font-medium">{lead.email}</span>
                               </div>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{lead.status}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{lead.origem}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-xs">
+                        <TableCell className="py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-sm font-semibold">
                                 {lead.corretor?.charAt(0).toUpperCase() || 'N'}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-sm">{lead.corretor || 'Não atribuído'}</span>
+                            <div>
+                              <div className="font-medium">{lead.corretor || 'Não atribuído'}</div>
+                              <div className="text-xs text-gray-500">Corretor</div>
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4">
                           <div className="flex items-center gap-2">
-                            <Star className="h-4 w-4 text-yellow-500" />
-                            <span className="font-semibold">{lead.score_ia || 0}</span>
+                            <Star className="h-5 w-5 text-yellow-500" />
+                            <span className="font-bold text-lg">{lead.score_ia || 0}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-gray-500">
-                            {lead.ultima_interacao ? 
-                              new Date(lead.ultima_interacao).toLocaleDateString('pt-BR') : 
-                              'Nunca'
-                            }
+                        <TableCell className="py-4">
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {lead.ultima_interacao ? 
+                                new Date(lead.ultima_interacao).toLocaleDateString('pt-BR') : 
+                                'Nunca'
+                              }
+                            </div>
+                            <div className="text-xs text-gray-500">Última atividade</div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right py-4">
                           <div className="flex items-center justify-end gap-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleViewLead(lead)}
+                              className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -637,6 +636,7 @@ export default function TodosLeadsV3() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleWhatsAppLead(lead)}
+                              className="h-8 w-8 p-0"
                             >
                               <MessageSquare className="h-4 w-4" />
                             </Button>
@@ -644,6 +644,7 @@ export default function TodosLeadsV3() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleEditLead(lead)}
+                              className="h-8 w-8 p-0"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
