@@ -37,7 +37,7 @@ const NotificationsPage = lazy(() => import('@/pages/notifications'));
 const EvolutionWhatsAppAuto = lazy(() => import('@/pages/evolution-whatsapp-auto'));
 const TestNotifications = lazy(() => import('@/pages/test-notifications'));
 const TestNotificationsDebug = lazy(() => import('@/pages/test-notifications-debug'));
-const GerentePerformance = lazy(() => import('@/pages/gerente-performance'));
+const GerentePerformance = lazy(() => import('@/pages/gerente-performance-v2'));
 const Profile = lazy(() => import('@/pages/profile')); // ✅ Página de perfil
 const Configuracoes = lazy(() => import('@/pages/configuracoes')); // ✅ Página de configurações
 const DiagnosticoLeads = lazy(() => import('@/pages/diagnostico-leads')); // ✅ Página de diagnóstico
