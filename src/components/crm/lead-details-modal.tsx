@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusBadge, LeadStatus } from '@/components/crm/status-badge';
 import {
   Phone,
@@ -17,9 +18,13 @@ import {
   User,
   Clock,
   MessageCircle,
+  MessageSquare,
+  Info,
 } from 'lucide-react';
 import { WhatsAppMessageModal } from './whatsapp-message-modal';
 import { AISuggestionPanel } from './ai-suggestion-panel';
+import { ConversationTimeline } from './conversation-timeline';
+import { ContextualInsights } from './contextual-insights';
 import { supabase } from '@/integrations/supabase/client';
 import type { Lead } from '@/hooks/use-leads';
 
@@ -74,7 +79,7 @@ export function LeadDetailsModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className='max-w-2xl'>
+        <DialogContent className='max-w-4xl max-h-[90vh] overflow-hidden'>
           <DialogHeader>
             <DialogTitle className='flex items-center justify-between'>
               <div className='flex items-center gap-2'>
@@ -92,7 +97,24 @@ export function LeadDetailsModal({
             </DialogTitle>
           </DialogHeader>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <Tabs defaultValue="info" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="info" className="flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                Informações
+              </TabsTrigger>
+              <TabsTrigger value="conversations" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Conversas
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                IA & Sugestões
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="info" className="mt-4 overflow-y-auto max-h-[60vh]">
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             {/* Informações Pessoais */}
             <div className='space-y-4'>
               <h3 className='font-semibold text-lg border-b pb-2'>
@@ -242,7 +264,30 @@ export function LeadDetailsModal({
                 </div>
               </div>
             </div>
-          </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="conversations" className="mt-4">
+              <ConversationTimeline leadId={lead.id} />
+            </TabsContent>
+
+            <TabsContent value="ai" className="mt-4 space-y-4">
+              {/* Insights Contextuais */}
+              <ContextualInsights leadId={lead.id} />
+              
+              {/* Sugestões da IA */}
+              {lastInteraction && (
+                <AISuggestionPanel
+                  leadId={lead.id}
+                  lastInteraction={lastInteraction}
+                  onSendSuggestion={message => {
+                    // Abrir modal do WhatsApp com a mensagem sugerida
+                    setShowWhatsAppModal(true);
+                  }}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
