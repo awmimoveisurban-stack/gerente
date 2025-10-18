@@ -143,9 +143,18 @@ export function NotificationsFixed() {
                             {notification.mensagem}
                           </p>
                           <p className='text-xs text-gray-400 mt-2'>
-                            {new Date(notification.created_at).toLocaleString(
-                              'pt-BR'
-                            )}
+                            {(() => {
+                              try {
+                                const date = new Date(notification.created_at);
+                                if (isNaN(date.getTime())) {
+                                  return 'Agora mesmo';
+                                }
+                                return date.toLocaleString('pt-BR');
+                              } catch (error) {
+                                console.warn('Erro ao formatar data:', error);
+                                return 'Agora mesmo';
+                              }
+                            })()}
                           </p>
                         </div>
                         {!notification.lida && (

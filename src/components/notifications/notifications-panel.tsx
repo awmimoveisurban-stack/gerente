@@ -192,13 +192,21 @@ export function NotificationsPanel({ onViewLead }: NotificationsPanelProps) {
 
                         <div className='flex items-center justify-between mt-2'>
                           <span className='text-xs text-gray-500 dark:text-gray-500'>
-                            {formatDistanceToNow(
-                              new Date(notification.created_at),
-                              {
-                                addSuffix: true,
-                                locale: ptBR,
+                            {(() => {
+                              try {
+                                const date = new Date(notification.created_at);
+                                if (isNaN(date.getTime())) {
+                                  return 'Agora mesmo';
+                                }
+                                return formatDistanceToNow(date, {
+                                  addSuffix: true,
+                                  locale: ptBR,
+                                });
+                              } catch (error) {
+                                console.warn('Erro ao formatar data:', error);
+                                return 'Agora mesmo';
                               }
-                            )}
+                            })()}
                           </span>
 
                           <div className='flex gap-1'>

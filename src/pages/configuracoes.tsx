@@ -27,7 +27,7 @@ import {
   testAuthCredentials,
   listTestUsers,
 } from '@/utils/test-auth-credentials';
-import { useSecureAuth } from '@/hooks/use-secure-auth';
+import { useUnifiedAuth } from '@/contexts/unified-auth-context';
 import {
   Settings,
   MessageSquare,
@@ -55,7 +55,7 @@ import {
 export default function Configuracoes() {
   const { toast } = useToast();
   const [showApiKey, setShowApiKey] = useState(false);
-  const { user } = useSecureAuth();
+  const { user } = useUnifiedAuth();
 
   // ✅ DEBUG: Log para verificar se o usuário está sendo detectado corretamente
   console.log('🔍 [CONFIGURACOES] Usuário detectado:', {

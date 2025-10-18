@@ -178,6 +178,10 @@ export const useLeadsSimple = () => {
       // Incluir user_id apenas se for uuid válido (evita 400 text=uuid)
       if (isUuid(user?.id || '')) {
         baseData.user_id = user?.id;
+      } else {
+        // ✅ CORREÇÃO: Se user_id não for UUID válido, usar null
+        console.warn('⚠️ user_id não é UUID válido, usando null:', user?.id);
+        baseData.user_id = null;
       }
 
       // Remover chaves com undefined/null vazio
@@ -203,6 +207,38 @@ export const useLeadsSimple = () => {
       return data;
     } catch (error: any) {
       console.error('Erro ao criar lead:', error);
+      
+      // ✅ CORREÇÃO ESPECÍFICA PARA FOREIGN KEY
+      if (error.code === '23503' && error.message?.includes('user_id')) {
+        console.warn('⚠️ Erro de foreign key user_id, tentando sem user_id...');
+        
+        // Tentar novamente sem user_id
+        const insertDataSemUserId = { ...insertData };
+        delete insertDataSemUserId.user_id;
+        
+        try {
+          const { data: retryData, error: retryError } = await supabase
+            .from('leads')
+            .insert([insertDataSemUserId])
+            .select()
+            .single();
+            
+          if (retryError) throw retryError;
+          
+          setLeads(prevLeads => [retryData, ...prevLeads]);
+          
+          toast({
+            title: "✅ Lead Criado",
+            description: "Lead criado com sucesso! (user_id omitido devido a constraint)"
+          });
+          
+          return retryData;
+        } catch (retryError) {
+          console.error('Erro no retry:', retryError);
+          // Continuar com erro original
+        }
+      }
+      
       toast({
         title: "❌ Erro ao Criar",
         description: error.message || "Não foi possível criar o lead.",

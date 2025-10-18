@@ -16,6 +16,14 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -79,8 +87,6 @@ import {
   XCircle,
   Clock3,
 } from 'lucide-react';
-import { LeadDetailsModal } from '@/components/crm/lead-details-modal';
-import { EditLeadModal } from '@/components/crm/edit-lead-modal';
 import { CallLeadModal } from '@/components/crm/call-lead-modal';
 import { EmailLeadModal } from '@/components/crm/email-lead-modal';
 import { ScheduleVisitModal } from '@/components/crm/schedule-visit-modal';
@@ -1365,12 +1371,8 @@ export default function LeadsV2() {
 
       {/* Modais */}
       <AddLeadModal
-        isOpen={showAddLeadModal}
-        onClose={() => setShowAddLeadModal(false)}
-        onSuccess={() => {
-          setShowAddLeadModal(false);
-          refetch();
-        }}
+        open={showAddLeadModal}
+        onOpenChange={setShowAddLeadModal}
       />
 
       <LeadDetailsModal
@@ -1429,15 +1431,6 @@ export default function LeadsV2() {
       />
 
       {/* Novos modais para ações */}
-      <LeadDetailsModal
-        lead={selectedLead}
-        isOpen={showDetailsModal}
-        onClose={() => {
-          setShowDetailsModal(false);
-          setSelectedLead(null);
-        }}
-      />
-
       <WhatsAppMessageModal
         lead={selectedLead}
         isOpen={showWhatsAppModal}
@@ -1450,20 +1443,6 @@ export default function LeadsV2() {
             title: '💬 Mensagem Enviada',
             description: 'Mensagem enviada via WhatsApp com sucesso!',
           });
-        }}
-      />
-
-      <EditLeadModal
-        lead={selectedLead}
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedLead(null);
-        }}
-        onSuccess={() => {
-          setShowEditModal(false);
-          setSelectedLead(null);
-          refetch(); // Atualizar lista após edição
         }}
       />
       </AppLayout>

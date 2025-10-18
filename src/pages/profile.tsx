@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useSecureAuth } from '@/hooks/use-secure-auth';
+import { useUnifiedAuth } from '@/contexts/unified-auth-context';
 import { useUserRoles } from '@/hooks/use-user-roles';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 
 export default function Profile() {
-  const { user } = useSecureAuth();
+  const { user } = useUnifiedAuth();
   const { hasRole } = useUserRoles();
   const { toast } = useToast();
 

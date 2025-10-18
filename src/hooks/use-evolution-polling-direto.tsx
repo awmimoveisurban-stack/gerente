@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { createLogger } from '@/utils/structured-logger';
 import { toast } from 'sonner';
 import { SimpleAIAnalyzer } from '@/utils/simple-ai-analyzer';
+import { useSafeLeadIntegration } from '@/components/notifications/safe-integration';
 
 const logger = createLogger('PollingDireto');
 
@@ -30,6 +31,9 @@ export const useEvolutionPollingDireto = (enabled: boolean = true) => {
   const isPollingRef = useRef(false);
   const processedMessagesRef = useRef<Set<string>>(new Set());
   const lastTimestampRef = useRef<number>(0); // ✅ MELHORIA #1: Armazenar último timestamp
+  
+  // ✅ INTEGRAÇÃO SEGURA DE NOTIFICAÇÕES
+  const { notifyLeadCreated } = useSafeLeadIntegration();
 
   const analyzeWithClaude = useCallback(
     async (
@@ -263,6 +267,9 @@ Responda APENAS JSON:
               );
 
               // ✅ CRIAR LEAD COM IA SIMPLES
+              const isUuid = (val?: string) =>
+                !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+              
               const leadData: any = {
                 nome: senderName,
                 telefone: phoneNumber,
@@ -274,6 +281,7 @@ Responda APENAS JSON:
                 orcamento: aiAnalysis.valor_estimado || null,
                 prioridade: aiAnalysis.prioridade,
                 observacoes: `[IA Score: ${aiAnalysis.score}/100 | Prioridade: ${aiAnalysis.prioridade}]\n${aiAnalysis.observacoes}\n\nMensagem: ${messageText}`,
+                user_id: isUuid(config.manager_id) ? config.manager_id : null, // ✅ CORREÇÃO: Usar null se não for UUID válido
                 manager_id: config.manager_id || null,
                 atribuido_a: config.manager_id || null,
               };
@@ -302,6 +310,10 @@ Responda APENAS JSON:
                   score: aiAnalysis.score,
                   prioridade: aiAnalysis.prioridade,
                 });
+                
+                // ✅ NOTIFICAÇÃO DE LEAD CRIADO VIA WHATSAPP (SEGURO)
+                notifyLeadCreated(lead);
+                
                 processedMessagesRef.current.add(messageId);
                 totalLeads++;
 

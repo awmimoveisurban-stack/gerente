@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUnifiedAuth } from '@/contexts/unified-auth-context';
 import { useUnifiedRoles } from '@/hooks/use-unified-roles';
 import { useToast } from '@/hooks/use-toast';
+import { useSafeLeadIntegration } from '@/components/notifications/safe-integration';
 
 // ✅ SINGLETON GLOBAL: Apenas 1 interval para TODOS os componentes
 let globalPollingInterval: NodeJS.Timeout | null = null;
@@ -38,6 +39,9 @@ export const useLeads = () => {
   const { user } = useUnifiedAuth();
   const { hasRole, loading: rolesLoading } = useUnifiedRoles();
   const { toast } = useToast();
+  
+  // ✅ INTEGRAÇÃO SEGURA DE NOTIFICAÇÕES
+  const { notifyLeadCreated, notifyLeadUpdated } = useSafeLeadIntegration();
 
   const fetchLeads = useCallback(async (forceRefresh = false) => {
     // 🚨 MODO EMERGÊNCIA
@@ -188,9 +192,12 @@ export const useLeads = () => {
       }
 
       // ✅ 2. CRIAR LEAD
+      const isUuid = (val?: string) =>
+        !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+      
       const leadToCreate = {
         ...leadData,
-        user_id: user.id,
+        user_id: isUuid(user.id) ? user.id : null, // ✅ CORREÇÃO: Usar null se não for UUID válido
         // Para corretores, definir o corretor como o email do usuário
         corretor: hasRole('corretor') ? user.email : leadData.corretor,
       };
@@ -203,6 +210,9 @@ export const useLeads = () => {
 
       if (error) throw error;
       
+      // ✅ NOTIFICAÇÃO DE LEAD CRIADO (SEGURO)
+      notifyLeadCreated(data);
+      
       toast({
         title: "✅ Lead criado com sucesso!",
         description: `${data.nome} foi adicionado ao sistema.`
@@ -211,6 +221,38 @@ export const useLeads = () => {
       return data;
     } catch (error: any) {
       console.error('Erro ao criar lead:', error);
+      
+      // ✅ CORREÇÃO ESPECÍFICA PARA FOREIGN KEY
+      if (error.code === '23503' && error.message?.includes('user_id')) {
+        console.warn('⚠️ Erro de foreign key user_id, tentando sem user_id...');
+        
+        // Tentar novamente sem user_id
+        const leadToCreateSemUserId = { ...leadToCreate };
+        delete leadToCreateSemUserId.user_id;
+        
+        try {
+          const { data: retryData, error: retryError } = await supabase
+            .from('leads')
+            .insert([leadToCreateSemUserId])
+            .select()
+            .single();
+            
+          if (retryError) throw retryError;
+          
+          // ✅ NOTIFICAÇÃO DE LEAD CRIADO (SEGURO)
+          notifyLeadCreated(retryData);
+          
+          toast({
+            title: "✅ Lead criado com sucesso!",
+            description: `${retryData.nome} foi adicionado ao sistema. (user_id omitido)`
+          });
+          await fetchLeads(); // Recarregar leads
+          return retryData;
+        } catch (retryError) {
+          console.error('Erro no retry:', retryError);
+          // Continuar com erro original
+        }
+      }
       
       // ✅ 3. MENSAGENS DE ERRO ESPECÍFICAS
       let title = "Erro ao criar lead";
@@ -272,6 +314,9 @@ export const useLeads = () => {
       }
       
       console.log('✅ Lead atualizado com sucesso:', data);
+      
+      // ✅ NOTIFICAÇÃO DE LEAD ATUALIZADO (SEGURO)
+      notifyLeadUpdated(data, cleanUpdates);
       
       // ✅ Atualizar estado local imediatamente
       setLeads(prevLeads => 

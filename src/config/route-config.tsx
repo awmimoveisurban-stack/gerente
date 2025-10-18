@@ -35,6 +35,8 @@ const GerenteEquipe = lazy(() => import('@/pages/gerente-equipe'));
 const TodosLeads = lazy(() => import('@/pages/todos-leads-v2'));
 const NotificationsPage = lazy(() => import('@/pages/notifications'));
 const EvolutionWhatsAppAuto = lazy(() => import('@/pages/evolution-whatsapp-auto'));
+const TestNotifications = lazy(() => import('@/pages/test-notifications'));
+const TestNotificationsDebug = lazy(() => import('@/pages/test-notifications-debug'));
 const GerentePerformance = lazy(() => import('@/pages/gerente-performance'));
 const Profile = lazy(() => import('@/pages/profile')); // ✅ Página de perfil
 const Configuracoes = lazy(() => import('@/pages/configuracoes')); // ✅ Página de configurações
@@ -180,10 +182,18 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: '/whatsapp',
+    path: '/test-notifications',
     element: (
       <ProtectedRoute allowedRoles={['gerente']}>
-        <EvolutionWhatsAppAuto />
+        <TestNotifications />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/test-notifications-debug',
+    element: (
+      <ProtectedRoute allowedRoles={['gerente']}>
+        <TestNotificationsDebug />
       </ProtectedRoute>
     ),
   },

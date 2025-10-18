@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSecureAuth } from '@/hooks/use-secure-auth';
+import { useUnifiedAuth } from '@/contexts/unified-auth-context';
 import { toast } from 'sonner';
 
 export interface Task {
@@ -19,7 +19,7 @@ export interface Task {
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useSecureAuth();
+  const { user } = useUnifiedAuth();
 
   const fetchTasks = async () => {
     if (!user) return;

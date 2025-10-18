@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './app-sidebar';
 import { NotificationsFixed } from '@/components/notifications/notifications-fixed';
+import { SafeNotificationIntegration } from '@/components/notifications/safe-integration';
 import { UserAvatarDropdown } from './user-avatar-dropdown';
 import { CacheClearButton } from '@/components/debug/cache-clear-button';
 import { Search } from 'lucide-react';
@@ -137,6 +138,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           </main>
         </div>
       </div>
+      
+      {/* ✅ COMPONENTE DE NOTIFICAÇÕES (SEGURO) */}
+      <SafeNotificationIntegration position="top-right" />
     </SidebarProvider>
   );
 }
