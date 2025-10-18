@@ -16,11 +16,25 @@ FROM pg_trigger
 WHERE tgrelid = 'public.leads'::regclass
 ORDER BY tgname;
 
--- 2. DESABILITAR TODOS OS TRIGGERS DA TABELA LEADS
-SELECT 'DESABILITANDO TRIGGERS DA TABELA LEADS' as status;
+-- 2. DESABILITAR APENAS TRIGGERS PERSONALIZADOS
+SELECT 'DESABILITANDO TRIGGERS PERSONALIZADOS' as status;
 
--- Desabilitar todos os triggers da tabela leads
-ALTER TABLE public.leads DISABLE TRIGGER ALL;
+-- Desabilitar apenas triggers personalizados (não do sistema)
+DO $$
+DECLARE
+    trigger_record RECORD;
+BEGIN
+    FOR trigger_record IN 
+        SELECT tgname 
+        FROM pg_trigger 
+        WHERE tgrelid = 'public.leads'::regclass
+        AND tgname NOT LIKE 'RI_ConstraintTrigger_%'
+        AND tgname NOT LIKE 'pg_%'
+    LOOP
+        EXECUTE format('ALTER TABLE public.leads DISABLE TRIGGER %I', trigger_record.tgname);
+        RAISE NOTICE 'Trigger % desabilitado', trigger_record.tgname;
+    END LOOP;
+END $$;
 
 -- Verificar se foram desabilitados
 SELECT 
