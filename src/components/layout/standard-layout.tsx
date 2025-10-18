@@ -14,9 +14,28 @@ import {
   STANDARD_CARD_COLORS,
   STANDARD_CARD_ANIMATIONS 
 } from '@/components/ui/standard-card';
+// ✅ NOVOS COMPONENTES BASEADOS NAS IMAGENS
+import {
+  StandardDashboardCard,
+  StandardDashboardGrid,
+  StandardDashboardContainer,
+  DASHBOARD_COLORS,
+  DASHBOARD_ANIMATIONS,
+  useDashboardAnimations,
+} from '@/components/ui/standard-dashboard-card';
 
 // 🎨 PALETA DE CORES PADRONIZADA (re-exportada do standard-card)
 export const STANDARD_COLORS = STANDARD_CARD_COLORS;
+
+// ✅ RE-EXPORTAR NOVOS COMPONENTES BASEADOS NAS IMAGENS
+export {
+  StandardDashboardCard,
+  StandardDashboardGrid,
+  StandardDashboardContainer,
+  DASHBOARD_COLORS,
+  DASHBOARD_ANIMATIONS,
+  useDashboardAnimations,
+};
 
 // 🎯 CONFIGURAÇÕES DE LAYOUT PADRONIZADAS
 export const LAYOUT_CONFIG = {

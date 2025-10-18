@@ -41,6 +41,17 @@ import { useLeads, type Lead } from '@/hooks/use-leads-v2';
 import { useLeadsFilters } from '@/hooks/use-leads-filters';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedAuth } from '@/contexts/unified-auth-context';
+// ✅ IMPORTAÇÕES PADRONIZADAS BASEADAS NAS IMAGENS
+import {
+  StandardPageLayout,
+  StandardHeader,
+  StandardDashboardCard,
+  StandardDashboardGrid,
+  StandardDashboardContainer,
+  DASHBOARD_COLORS,
+  DASHBOARD_ANIMATIONS,
+  useDashboardAnimations,
+} from '@/components/layout/standard-layout';
 import {
   Plus,
   TrendingUp,
@@ -234,57 +245,63 @@ export default function LeadsV3() {
           />
         }
       >
-        {/* ✅ MÉTRICAS PESSOAIS PADRONIZADAS */}
-        <StandardGrid columns="4">
-          <StandardMetricCard
-            title="Total de Leads"
-            value={personalMetrics.totalLeads}
-            subtitle="Seus leads"
-            icon={Users}
-            color="purple"
-            trend={{
-              value: 15,
-              isPositive: true,
-              period: "este mês"
-            }}
-          />
-          <StandardMetricCard
-            title="Leads Ativos"
-            value={personalMetrics.leadsAtivos}
-            subtitle="Em andamento"
-            icon={Target}
-            color="success"
-            trend={{
-              value: 5,
-              isPositive: true,
-              period: "esta semana"
-            }}
-          />
-          <StandardMetricCard
-            title="Taxa de Conversão"
-            value={`${personalMetrics.taxaConversao.toFixed(1)}%`}
-            subtitle="Sua performance"
-            icon={TrendingUp}
-            color="orange"
-            trend={{
-              value: 2,
-              isPositive: true,
-              period: "vs mês anterior"
-            }}
-          />
-          <StandardMetricCard
-            title="Valor Total"
-            value={`R$ ${(personalMetrics.valorTotal || 0).toLocaleString()}`}
-            subtitle="Potencial de vendas"
-            icon={DollarSign}
-            color="info"
-            trend={{
-              value: 18,
-              isPositive: true,
-              period: "novos este mês"
-            }}
-          />
-        </StandardGrid>
+        {/* ✅ MÉTRICAS PESSOAIS BASEADAS NAS IMAGENS */}
+        <motion.div
+          initial={DASHBOARD_ANIMATIONS.pageInitial}
+          animate={DASHBOARD_ANIMATIONS.pageAnimate}
+          transition={{ delay: 0.1 }}
+        >
+          <StandardDashboardGrid columns="4">
+            <StandardDashboardCard
+              title="Total de Leads"
+              value={personalMetrics.totalLeads}
+              subtitle="Seus leads"
+              icon={Users}
+              color="primary"
+              trend={{
+                value: 15,
+                label: "este mês",
+                positive: true
+              }}
+            />
+            <StandardDashboardCard
+              title="Leads Ativos"
+              value={personalMetrics.leadsAtivos}
+              subtitle="Em andamento"
+              icon={Target}
+              color="success"
+              trend={{
+                value: 5,
+                label: "esta semana",
+                positive: true
+              }}
+            />
+            <StandardDashboardCard
+              title="Taxa de Conversão"
+              value={`${personalMetrics.taxaConversao.toFixed(1)}%`}
+              subtitle="Sua performance"
+              icon={TrendingUp}
+              color="warning"
+              trend={{
+                value: 2,
+                label: "vs mês anterior",
+                positive: true
+              }}
+            />
+            <StandardDashboardCard
+              title="Valor Total"
+              value={`R$ ${(personalMetrics.valorTotal || 0).toLocaleString()}`}
+              subtitle="Potencial de vendas"
+              icon={DollarSign}
+              color="info"
+              trend={{
+                value: 18,
+                label: "novos este mês",
+                positive: true
+              }}
+            />
+          </StandardDashboardGrid>
+        </motion.div>
 
         {/* ✅ FILTROS E BUSCA */}
         <motion.div
