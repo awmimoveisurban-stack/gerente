@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
   DragEndEvent,
@@ -9,7 +10,8 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { AppLayout } from '@/components/layout/app-layout';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { KanbanColumn } from '@/components/crm/kanban-column';
 import { LeadCardEnhanced } from '@/components/crm/lead-card-enhanced';
 import { AddLeadModal } from '@/components/crm/add-lead-modal';
@@ -18,19 +20,21 @@ import { CallLeadModal } from '@/components/crm/call-lead-modal';
 import { EmailLeadModal } from '@/components/crm/email-lead-modal';
 import { ScheduleVisitModal } from '@/components/crm/schedule-visit-modal';
 import { ReassignLeadModal } from '@/components/crm/reassign-lead-modal';
-import { KanbanMetrics } from '@/components/crm/kanban-metrics';
-import { KanbanSummary } from '@/components/crm/kanban-summary';
-import { KanbanHeader } from '@/components/crm/kanban-header';
-import { KanbanLoading } from '@/components/crm/kanban-loading';
-import { KanbanAlerts } from '@/components/crm/kanban-alerts';
-import { KanbanBottlenecks } from '@/components/crm/kanban-bottlenecks';
-import { KanbanCorretorRanking } from '@/components/crm/kanban-corretor-ranking';
-import { KanbanExtendedMetrics } from '@/components/crm/kanban-extended-metrics';
 import { useLeads, type Lead } from '@/hooks/use-leads';
 import { useKanbanMetrics } from '@/hooks/use-kanban-metrics';
 import { useUnifiedRoles } from '@/hooks/use-unified-roles';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useToast } from '@/hooks/use-toast';
+// ✅ IMPORTAÇÕES PADRONIZADAS
+import {
+  StandardPageLayout,
+  StandardHeader,
+  StandardMetricCard,
+  StandardGrid,
+  useStandardLayout,
+  LAYOUT_CONFIG,
+  STANDARD_ANIMATIONS,
+} from '@/components/layout/standard-layout';
 import {
   Sparkles,
   UserCheck,
@@ -38,49 +42,60 @@ import {
   FileText,
   XCircle,
   TrendingUp,
+  LayoutGrid,
+  Plus,
+  RefreshCw,
+  Users,
+  Activity,
+  Target,
+  Trophy,
+  Filter,
+  Search,
+  Settings,
 } from 'lucide-react';
 
+// ✅ COLUNAS PADRONIZADAS COM CORES CONSISTENTES
 const COLUMNS = [
   {
     id: 'novo',
     title: 'Novo',
     icon: Sparkles,
-    color: 'bg-blue-500',
+    color: 'primary',
     bgColor: 'bg-blue-50 dark:bg-blue-950/20',
   },
   {
     id: 'contatado',
     title: 'Contatado',
     icon: UserCheck,
-    color: 'bg-purple-500',
+    color: 'warning',
     bgColor: 'bg-purple-50 dark:bg-purple-950/20',
   },
   {
     id: 'interessado',
     title: 'Interessado',
     icon: UserCheck,
-    color: 'bg-indigo-500',
+    color: 'info',
     bgColor: 'bg-indigo-50 dark:bg-indigo-950/20',
   },
   {
     id: 'visita_agendada',
     title: 'Visita Agendada',
     icon: Calendar,
-    color: 'bg-orange-500',
+    color: 'success',
     bgColor: 'bg-orange-50 dark:bg-orange-950/20',
   },
   {
     id: 'proposta',
     title: 'Proposta',
     icon: FileText,
-    color: 'bg-amber-500',
+    color: 'purple',
     bgColor: 'bg-amber-50 dark:bg-amber-950/20',
   },
   {
     id: 'perdido',
     title: 'Perdido',
     icon: XCircle,
-    color: 'bg-red-500',
+    color: 'danger',
     bgColor: 'bg-red-50 dark:bg-red-950/20',
   },
 ];
@@ -97,7 +112,7 @@ export default function KanbanEnhanced() {
     leads || []
   );
 
-  // Estados dos modais e filtros
+  // ✅ ESTADOS PADRONIZADOS
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCorretorId, setSelectedCorretorId] = useState<string>('todos');
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
@@ -111,6 +126,8 @@ export default function KanbanEnhanced() {
   const [cardSize, setCardSize] = useState<'default' | 'compact' | 'mini'>(
     'compact'
   );
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   // Sensors para drag and drop
   const sensors = useSensors(
@@ -160,12 +177,24 @@ export default function KanbanEnhanced() {
     navigate('/todos-leads');
   }, [navigate]);
 
+  // ✅ HANDLER DE REFRESH PADRONIZADO
   const handleRefresh = useCallback(async () => {
-    await refetch();
-    toast({
-      title: '✅ Dados Atualizados',
-      description: 'As informações do Kanban foram atualizadas',
-    });
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: '✅ Kanban Atualizado',
+        description: 'Dados atualizados com sucesso!',
+      });
+    } catch (error) {
+      toast({
+        title: '❌ Erro ao Atualizar',
+        description: 'Não foi possível atualizar os dados.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [refetch, toast]);
 
   // Handlers para drag and drop
@@ -263,39 +292,108 @@ export default function KanbanEnhanced() {
     [profiles]
   );
 
-  // Loading state
+  // ✅ HEADER PADRONIZADO
+  const headerActions = (
+    <>
+      <Button
+        onClick={handleAddLead}
+        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Novo Lead
+      </Button>
+      <Button
+        onClick={handleRefresh}
+        variant="outline"
+        disabled={isRefreshing}
+        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+      >
+        {isRefreshing ? (
+          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <RefreshCw className="mr-2 h-4 w-4" />
+        )}
+        Atualizar
+      </Button>
+    </>
+  );
+
+  // ✅ LOADING STATE PADRONIZADO
   if (loading) {
     return (
-      <AppLayout>
-        <KanbanLoading />
-      </AppLayout>
+      <StandardPageLayout
+        header={
+          <StandardHeader
+            title="Quadro Kanban"
+            subtitle="Gerencie seus leads com visualização em colunas"
+            icon={LayoutGrid}
+            actions={headerActions}
+            gradient="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800"
+          />
+        }
+      >
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </StandardPageLayout>
     );
   }
 
   return (
-    <AppLayout>
-      <div className='space-y-8'>
-        {/* Header com Filtros */}
-        <KanbanHeader
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onAddLead={handleAddLead}
-          onViewReports={handleViewReports}
-          onViewAllLeads={handleViewAllLeads}
-          onRefresh={handleRefresh}
-          totalLeads={metrics.totalLeads}
-          cardSize={cardSize}
-          onCardSizeChange={setCardSize}
-          selectedCorretorId={selectedCorretorId}
-          onCorretorChange={setSelectedCorretorId}
-          profiles={profiles}
+    <StandardPageLayout
+      header={
+        <StandardHeader
+          title="Quadro Kanban"
+          subtitle="Gerencie seus leads com visualização em colunas"
+          icon={LayoutGrid}
+          actions={headerActions}
+          gradient="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800"
         />
+      }
+    >
+      <div className='space-y-8'>
 
         {/* ✅ FASE 1.4: Alertas Críticos */}
         <KanbanAlerts leads={filteredLeads} />
 
-        {/* Métricas Principais */}
-        <KanbanMetrics metrics={metrics} />
+        {/* ✅ MÉTRICAS PADRONIZADAS */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <StandardGrid columns="4">
+            <StandardMetricCard
+              title="Total de Leads"
+              value={metrics?.totalLeads || 0}
+              icon={Users}
+              color="primary"
+            />
+            <StandardMetricCard
+              title="Em Andamento"
+              value={metrics?.emAndamento || 0}
+              icon={Activity}
+              color="warning"
+            />
+            <StandardMetricCard
+              title="Taxa de Conversão"
+              value={`${metrics?.taxaConversao || 0}%`}
+              icon={Target}
+              color="success"
+            />
+            <StandardMetricCard
+              title="Leads Fechados"
+              value={metrics?.leadsFechados || 0}
+              icon={Trophy}
+              color="info"
+            />
+          </StandardGrid>
+        </motion.div>
 
         {/* ✅ FASE 2.4 & 3.2: Métricas Expandidas + Comparativo Mensal (apenas para gerente) */}
         {isGerente && profiles.length > 0 && (
@@ -316,48 +414,58 @@ export default function KanbanEnhanced() {
           totalLeads={metrics.totalLeads}
         />
 
-        {/* Quadro Kanban */}
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+        {/* ✅ QUADRO KANBAN COM ANIMAÇÕES */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
         >
-          {/* Em mobile, use rolagem horizontal com snap para colunas */}
-          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 lg:gap-6 md:[overflow:visible] [overflow-x:auto] [scroll-snap-type:x_mandatory] [-ms-overflow-style:none] [scrollbar-width:none]'>
-            {/* esconder scrollbar nos navegadores comuns */}
-            {/* style via tailwind arbitrary: */}
-            {/* cada coluna fará snap no início */}
-            {COLUMNS.map(column => (
-              <KanbanColumn
-                key={column.id}
-                id={column.id}
-                title={column.title}
-                icon={column.icon}
-                color={column.color}
-                bgColor={column.bgColor}
-                leads={leadsByColumn[column.id] || []}
-                onViewDetails={handleViewDetails}
-                onCall={handleCallLead}
-                onEmail={handleEmailLead}
-                onScheduleVisit={handleScheduleVisit}
-                cardSize={cardSize}
-                // ✅ Renderizar LeadCardEnhanced dentro
-                renderCard={lead => (
-                  <LeadCardEnhanced
-                    key={lead.id}
-                    lead={lead}
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            {/* ✅ GRID RESPONSIVO MELHORADO */}
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 lg:gap-6 md:[overflow:visible] [overflow-x:auto] [scroll-snap-type:x_mandatory] [-ms-overflow-style:none] [scrollbar-width:none]'>
+              {COLUMNS.map((column, index) => (
+                <motion.div
+                  key={column.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="snap-start"
+                >
+                  <KanbanColumn
+                    id={column.id}
+                    title={column.title}
+                    icon={column.icon}
+                    color={column.color}
+                    bgColor={column.bgColor}
+                    leads={leadsByColumn[column.id] || []}
                     onViewDetails={handleViewDetails}
                     onCall={handleCallLead}
                     onEmail={handleEmailLead}
                     onScheduleVisit={handleScheduleVisit}
-                    onReassign={isGerente ? handleReassignLead : undefined}
-                    corretorName={getCorretorName(lead.atribuido_a)}
                     cardSize={cardSize}
+                    // ✅ Renderizar LeadCardEnhanced dentro
+                    renderCard={lead => (
+                      <LeadCardEnhanced
+                        key={lead.id}
+                        lead={lead}
+                        onViewDetails={handleViewDetails}
+                        onCall={handleCallLead}
+                        onEmail={handleEmailLead}
+                        onScheduleVisit={handleScheduleVisit}
+                        onReassign={isGerente ? handleReassignLead : undefined}
+                        corretorName={getCorretorName(lead.atribuido_a)}
+                        cardSize={cardSize}
+                      />
+                    )}
                   />
-                )}
-              />
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
 
           {/* Drag Overlay */}
           <DragOverlay>
@@ -375,6 +483,7 @@ export default function KanbanEnhanced() {
             ) : null}
           </DragOverlay>
         </DndContext>
+        </motion.div>
 
         {/* Modais */}
         <AddLeadModal
@@ -417,6 +526,6 @@ export default function KanbanEnhanced() {
           />
         )}
       </div>
-    </AppLayout>
+    </StandardPageLayout>
   );
 }
