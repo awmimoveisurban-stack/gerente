@@ -2,6 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ✅ UTILITÁRIOS DE RESPONSIVIDADE */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .container-responsive {
+    @apply mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .grid-responsive {
+    @apply grid gap-4 md:gap-6;
+  }
+  
+  .card-responsive {
+    @apply rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4 md:p-6;
+  }
+  
+  .button-responsive {
+    @apply px-4 py-2 md:px-6 md:py-3 text-sm md:text-base;
+  }
+}
+
 /* ✅ Animação para loading shimmer */
 @keyframes shimmer {
   0% {

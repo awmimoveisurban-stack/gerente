@@ -4,6 +4,7 @@ import { useUnifiedAuth } from '@/contexts/unified-auth-context';
 import { useUnifiedRoles } from '@/hooks/use-unified-roles';
 import { useToast } from '@/hooks/use-toast';
 import { useSafeLeadIntegration } from '@/components/notifications/safe-integration';
+import { useUnifiedCache } from '@/hooks/use-unified-cache';
 
 // ✅ SINGLETON GLOBAL: Apenas 1 interval para TODOS os componentes
 let globalPollingInterval: NodeJS.Timeout | null = null;
@@ -40,6 +41,9 @@ export const useLeads = () => {
   const { hasRole, loading: rolesLoading } = useUnifiedRoles();
   const { toast } = useToast();
   
+  // ✅ CACHE UNIFICADO PARA PERFORMANCE
+  const cache = useUnifiedCache({ defaultTTL: 30000, maxSize: 50 });
+  
   // ✅ INTEGRAÇÃO SEGURA DE NOTIFICAÇÕES
   const { notifyLeadCreated, notifyLeadUpdated } = useSafeLeadIntegration();
 
@@ -58,40 +62,28 @@ export const useLeads = () => {
     
     // ✅ FORÇAR REFRESH: Limpar cache se solicitado
     if (forceRefresh) {
-      const cacheKey = `leads_cache_${user.id}`;
-      const cacheTimeKey = `leads_time_${user.id}`;
-      sessionStorage.removeItem(cacheKey);
-      sessionStorage.removeItem(cacheTimeKey);
+      cache.clearCache(`leads_${user.id}`);
       console.log('🔄 [DEBUG] Cache forçado a limpar para refresh');
     }
 
     try {
       setLoading(true);
       
-      // ✅ OTIMIZAÇÃO: Cache de leads por 30 segundos
-      const cacheKey = `leads_cache_${user.id}`;
-      const cacheTimeKey = `leads_time_${user.id}`;
-      const cachedLeads = sessionStorage.getItem(cacheKey);
-      const cacheTime = sessionStorage.getItem(cacheTimeKey);
+      // ✅ OTIMIZAÇÃO: Cache unificado de leads
+      const cacheKey = `leads_${user.id}`;
+      const cachedLeads = cache.getCachedData<Lead[]>(cacheKey);
       
-      console.log('🔍 [DEBUG] Verificando cache:', {
+      console.log('🔍 [DEBUG] Verificando cache unificado:', {
         hasCache: !!cachedLeads,
-        cacheTime: cacheTime ? new Date(parseInt(cacheTime)).toLocaleString() : 'não existe',
-        cacheAge: cacheTime ? Math.round((Date.now() - parseInt(cacheTime)) / 1000) + 's' : 'não existe'
+        cacheStats: cache.getCacheStats()
       });
       
-      // Verificar se cache é válido (30 segundos)
-      if (cachedLeads && cacheTime) {
-        const cacheAge = Date.now() - parseInt(cacheTime);
-        if (cacheAge < 30 * 1000) { // 30 segundos
-          const leads = JSON.parse(cachedLeads);
-          console.log('✅ [DEBUG] Usando cache válido:', { total: leads.length });
-          setLeads(leads);
-          setLoading(false);
-          return;
-        } else {
-          console.log('⏰ [DEBUG] Cache expirado, buscando dados frescos');
-        }
+      // Verificar se cache é válido
+      if (cachedLeads && !forceRefresh) {
+        console.log('✅ [DEBUG] Usando cache unificado válido:', { total: cachedLeads.length });
+        setLeads(cachedLeads);
+        setLoading(false);
+        return;
       }
       
       let query = supabase.from('leads').select('*');
@@ -143,9 +135,8 @@ export const useLeads = () => {
       
       const leadsData = data || [];
       
-      // Salvar no cache
-      sessionStorage.setItem(cacheKey, JSON.stringify(leadsData));
-      sessionStorage.setItem(cacheTimeKey, Date.now().toString());
+      // Salvar no cache unificado
+      cache.setCachedData(cacheKey, leadsData);
       
       setLeads(leadsData);
     } catch (error) {

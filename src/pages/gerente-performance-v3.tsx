@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { useCorretorPerformanceReal } from '@/hooks/use-corretor-performance-real';
+import { useCorretorPerformance } from '@/hooks/use-corretor-performance';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,7 +84,7 @@ export default function GerentePerformance() {
     alerts,
     loading,
     refetch,
-  } = useCorretorPerformanceReal();
+  } = useCorretorPerformance();
 
   const handleRefreshData = () => handleRefresh(refetch, toast);
 

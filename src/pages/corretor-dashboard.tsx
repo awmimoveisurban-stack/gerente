@@ -27,7 +27,6 @@ import { FollowUpModal } from '@/components/crm/follow-up-modal';
 import { TaskModal } from '@/components/crm/task-modal';
 import { DashboardMetrics } from '@/components/crm/dashboard-metrics';
 import { WeeklyPerformance } from '@/components/crm/weekly-performance';
-import { RecentLeadsTable } from '@/components/crm/recent-leads-table';
 import { QuickActions } from '@/components/crm/quick-actions';
 import { useLeads, type Lead } from '@/hooks/use-leads';
 import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
@@ -311,15 +310,6 @@ export default function CorretorDashboard() {
           performanceMetrics={performanceMetrics}
         />
 
-        {/* Leads Recentes */}
-        <RecentLeadsTable
-          leads={leadsRecentes}
-          onViewDetails={handleViewDetails}
-          onEditLead={handleEditLead}
-          onCallLead={handleCallLead}
-          onEmailLead={handleEmailLead}
-          onScheduleVisit={handleScheduleVisitLead}
-        />
 
         {/* Ações Rápidas */}
         <QuickActions

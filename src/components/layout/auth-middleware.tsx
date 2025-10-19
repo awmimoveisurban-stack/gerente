@@ -10,7 +10,7 @@
 
 import React, { useEffect, useState, ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useUnifiedAuth } from '@/contexts/unified-auth-context';
+import { useAuth } from '@/features/auth/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
 // ============================================================================
@@ -118,12 +118,13 @@ export function AuthMiddleware({
   const { toast } = useToast();
   
   const { 
-    isAuthenticated, 
     user, 
     loading, 
-    isSessionExpired,
     logout 
-  } = useUnifiedAuth();
+  } = useAuth();
+  
+  const isAuthenticated = !!user;
+  const isSessionExpired = false; // Implementar lógica de expiração se necessário
 
   const [isValidating, setIsValidating] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);

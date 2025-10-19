@@ -13,24 +13,19 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useDashboard } from '@/hooks/use-dashboard';
+import { useAnalyticsData } from '@/hooks/use-analytics-data';
+import {
+  LeadsByStatusChart,
+  CorretorPerformanceChart,
+  LeadsByOriginChart,
+  ConversionTrendChart,
+  ValueTrendChart,
+} from '@/components/ui/analytics-charts';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ManagerRoute } from '@/components/layout/auth-middleware';
 import { AILeadIndicators } from '@/components/ui/ai-indicators';
 import { AITooltip } from '@/components/ui/ai-tooltip';
 import {
-  SimpleProbability,
-  SimpleUrgency,
-  SimpleNextAction,
-  SimpleTime,
-} from '@/components/ui/simple-ai-indicators';
-import {
-  calcularProbabilidadeFechamento,
-  calcularUrgencia,
-  sugerirProximaAcao,
-  calcularTempoNoPipeline,
-  determinarCanalPreferido,
-  analisarSentimento,
-  determinarFaixaPreco,
   formatarDataRelativa,
   type LeadCompleto,
 } from '@/utils/lead-intelligence';
@@ -58,7 +53,6 @@ import {
   Download,
   Search,
   MoreHorizontal,
-  Brain,
   AlertTriangle,
   MapPin,
   MessageSquare,
@@ -89,6 +83,7 @@ export default function GerenteDashboardV2() {
     loading,
     refetch,
   } = useDashboard();
+  const analyticsData = useAnalyticsData();
 
   // ✅ FUNÇÕES AUXILIARES PARA IA
   const getScoreColor = (score: number) => {
@@ -148,39 +143,6 @@ export default function GerenteDashboardV2() {
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   
-  // ✅ FILTROS DE IA
-  const [scoreFilter, setScoreFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [originFilter, setOriginFilter] = useState('all');
-
-  // ✅ FILTRAR LEADS RECENTES COM BASE NOS FILTROS DE IA
-  const filteredLeadsRecentes = useMemo(() => {
-    return leadsRecentes.filter(lead => {
-      // Filtro por score
-      const matchesScore = (() => {
-        if (scoreFilter === 'all') return true;
-        const score = lead.score || 0;
-        switch (scoreFilter) {
-          case 'high':
-            return score >= 80;
-          case 'medium':
-            return score >= 50 && score < 80;
-          case 'low':
-            return score < 50;
-          default:
-            return true;
-        }
-      })();
-
-      // Filtro por prioridade
-      const matchesPriority = priorityFilter === 'all' || (lead as any).prioridade === priorityFilter;
-
-      // Filtro por origem
-      const matchesOrigin = originFilter === 'all' || lead.origem === originFilter;
-
-      return matchesScore && matchesPriority && matchesOrigin;
-    });
-  }, [leadsRecentes, scoreFilter, priorityFilter, originFilter]);
 
   // ✅ OTIMIZAÇÃO: Dados de gráficos removidos para melhor performance
 
@@ -542,190 +504,54 @@ export default function GerenteDashboardV2() {
           </Card>
         </motion.div>
 
-        {/* 📱 LEADS RECENTES COM IA */}
+        {/* 📊 SEÇÃO DE GRÁFICOS ANALÍTICOS */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8"
         >
-          <Card className='shadow-xl border-2 border-indigo-200 dark:border-indigo-800'>
-            <CardHeader className='bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Brain className='h-5 w-5 text-indigo-600' />
-                    Leads Recentes com IA Simplificada
-                  </CardTitle>
-                  <CardDescription>
-                    Layout limpo e intuitivo: probabilidade, urgência, tempo e próxima ação
-                    {filteredLeadsRecentes.length !== leadsRecentes.length && (
-                      <span className='ml-2 text-blue-600 dark:text-blue-400 font-medium'>
-                        ({filteredLeadsRecentes.length} de {leadsRecentes.length} leads)
-                      </span>
-                    )}
-                  </CardDescription>
-                </div>
-                
-                {/* ✅ FILTROS DE IA */}
-                <div className='flex gap-2'>
-                  <select
-                    value={scoreFilter}
-                    onChange={(e) => setScoreFilter(e.target.value)}
-                    className='px-3 py-1 text-sm border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600'
-                  >
-                    <option value='all'>Todos os Scores</option>
-                    <option value='high'>Score Alto (80+)</option>
-                    <option value='medium'>Score Médio (50-79)</option>
-                    <option value='low'>Score Baixo (&lt;50)</option>
-                  </select>
-                  
-                  <select
-                    value={priorityFilter}
-                    onChange={(e) => setPriorityFilter(e.target.value)}
-                    className='px-3 py-1 text-sm border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600'
-                  >
-                    <option value='all'>Todas as Prioridades</option>
-                    <option value='urgente'>Urgente</option>
-                    <option value='alta'>Alta</option>
-                    <option value='media'>Média</option>
-                    <option value='baixa'>Baixa</option>
-                  </select>
-                  
-                  <select
-                    value={originFilter}
-                    onChange={(e) => setOriginFilter(e.target.value)}
-                    className='px-3 py-1 text-sm border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600'
-                  >
-                    <option value='all'>Todas as Origens</option>
-                    <option value='whatsapp'>WhatsApp</option>
-                    <option value='site'>Site</option>
-                    <option value='indicacao'>Indicação</option>
-                    <option value='manual'>Manual</option>
-                  </select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className='p-0'>
-            {filteredLeadsRecentes.length === 0 ? (
-              <div className='p-12 text-center'>
-                <div className='w-20 h-20 mx-auto mb-4 rounded-full bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center'>
-                  <Users className='h-10 w-10 text-indigo-400' />
-                </div>
-                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
-                  {leadsRecentes.length === 0 ? 'Nenhum Lead Ainda' : 'Nenhum Lead Filtrado'}
-                </h3>
-                <p className='text-gray-600 dark:text-gray-400 mb-6'>
-                  {leadsRecentes.length === 0 
-                    ? 'Os leads da sua equipe aparecerão aqui em tempo real'
-                    : 'Tente ajustar os filtros para ver mais leads'
-                  }
-                </p>
-                <Button onClick={handleNovoLead}>
-                  <Plus className='mr-2 h-4 w-4' />
-                  Criar Primeiro Lead
-                </Button>
-              </div>
-            ) : (
-              <div className='divide-y divide-gray-100 dark:divide-gray-800'>
-                {filteredLeadsRecentes.slice(0, 5).map((lead, index) => {
-                  // ✅ CONVERTER LEAD PARA LeadCompleto
-                  const leadCompleto: LeadCompleto = {
-                    id: lead.id,
-                    nome: lead.nome,
-                    corretor: lead.corretor,
-                    status: lead.status,
-                    valor: lead.valor,
-                    created_at: lead.created_at,
-                    score: lead.score || null,
-                    origem: lead.origem || null,
-                    observacoes: (lead as any).observacoes || null,
-                    mensagem_inicial: (lead as any).mensagem_inicial || null,
-                    prioridade: (lead as any).prioridade || null,
-                    cidade: (lead as any).cidade || null,
-                    interesse: (lead as any).interesse || null,
-                    last_interaction_at: (lead as any).last_interaction_at || null,
-                    telefone: (lead as any).telefone || null,
-                    email: (lead as any).email || null,
-                    orcamento: (lead as any).orcamento || null,
-                    valor_interesse: (lead as any).valor_interesse || null,
-                  };
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              📊 Análises e Gráficos
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Visualize insights importantes sobre sua equipe e leads
+            </p>
+          </div>
 
-                  // ✅ CALCULAR MÉTRICAS INTELIGENTES
-                  const probabilidade = calcularProbabilidadeFechamento(leadCompleto);
-                  const urgencia = calcularUrgencia(leadCompleto);
-                  const proximaAcao = sugerirProximaAcao(leadCompleto);
-                  const tempoNoPipeline = calcularTempoNoPipeline(leadCompleto.created_at);
-                  const canalPreferido = determinarCanalPreferido(leadCompleto);
-                  const sentimento = analisarSentimento(leadCompleto);
-                  const faixaPreco = determinarFaixaPreco(leadCompleto);
+          {/* Primeira linha de gráficos */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <LeadsByStatusChart 
+              data={analyticsData.leadsByStatus} 
+              loading={analyticsData.loading}
+            />
+            <LeadsByOriginChart 
+              data={analyticsData.leadsByOrigin} 
+              loading={analyticsData.loading}
+            />
+          </div>
 
-                  return (
-                    <motion.div
-                      key={lead.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className='p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'
-                    >
-                      {/* 🎯 LAYOUT SIMPLIFICADO - 2 LINHAS */}
-                      <div className='flex items-center justify-between mb-4'>
-                        {/* Cliente e Status */}
-                        <div className='flex items-center gap-3'>
-                          <div className='relative'>
-                            <div className='w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg'>
-                              {lead.nome?.charAt(0).toUpperCase() || '?'}
-                            </div>
-                            {lead.score && lead.score >= 80 && (
-                              <div className='absolute -top-1 -right-1'>
-                                <Star className='h-5 w-5 text-yellow-500 fill-current' />
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <h4 className='font-semibold text-gray-900 dark:text-white text-lg'>
-                              {lead.nome}
-                            </h4>
-                            <div className='flex items-center gap-2'>
-                              <Badge variant='outline' className='text-sm'>
-                                {lead.status}
-                              </Badge>
-                              <span className='text-sm text-gray-500'>
-                                {lead.origem || 'Origem não informada'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Valor */}
-                        <div className='text-right'>
-                          <div className='text-lg font-bold text-green-600 dark:text-green-400'>
-                            {leadCompleto.valor && leadCompleto.valor > 0
-                              ? `R$ ${leadCompleto.valor.toLocaleString('pt-BR')}`
-                              : 'Valor não informado'}
-                          </div>
-                        </div>
-                      </div>
+          {/* Segunda linha de gráficos */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <ConversionTrendChart 
+              data={analyticsData.conversionTrend} 
+              loading={analyticsData.loading}
+            />
+            <ValueTrendChart 
+              data={analyticsData.valueTrend} 
+              loading={analyticsData.loading}
+            />
+          </div>
 
-                      {/* 🎯 LINHA 2: INDICADORES E AÇÃO */}
-                      <div className='flex items-center justify-between'>
-                        {/* Indicadores IA */}
-                        <div className='flex items-center gap-2'>
-                          <SimpleProbability probability={probabilidade} />
-                          <SimpleUrgency urgency={urgencia} />
-                          <SimpleTime days={tempoNoPipeline} />
-                        </div>
-                        
-                        {/* Próxima Ação */}
-                        <SimpleNextAction action={proximaAcao} />
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
+          {/* Terceira linha - Performance dos Corretores (largura completa) */}
+          <div className="grid grid-cols-1 gap-6">
+            <CorretorPerformanceChart 
+              data={analyticsData.corretorPerformance} 
+              loading={analyticsData.loading}
+            />
+          </div>
+        </motion.div>
 
       </div>
       </AppLayout>

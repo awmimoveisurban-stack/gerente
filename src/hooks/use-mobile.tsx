@@ -1,21 +1,27 @@
-import * as React from 'react';
+import { useState, useEffect } from 'react';
 
-const MOBILE_BREAKPOINT = 768;
-
+// 📱 HOOK PARA DETECTAR DISPOSITIVOS MÓVEIS
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-    undefined
-  );
+  const [isMobile, setIsMobile] = useState(false);
 
-  React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
     };
-    mql.addEventListener('change', onChange);
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    return () => mql.removeEventListener('change', onChange);
+
+    // Verificar no carregamento
+    checkIsMobile();
+
+    // Escutar mudanças de tamanho
+    window.addEventListener('resize', checkIsMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }
+
+export default useIsMobile;
+

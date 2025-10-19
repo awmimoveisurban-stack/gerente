@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUserRoles } from '@/hooks/use-user-roles';
+import { useAuth } from '@/features/auth/auth-context';
 import { GlobalLoading } from '@/components/global-loading';
 
 /**
@@ -8,7 +8,7 @@ import { GlobalLoading } from '@/components/global-loading';
  */
 export const DashboardRedirect = () => {
   const navigate = useNavigate();
-  const { hasRole, loading } = useUserRoles();
+  const { user, loading, isManager, isCorretor } = useAuth();
   const hasRedirected = useRef(false);
 
   useEffect(() => {
@@ -16,17 +16,14 @@ export const DashboardRedirect = () => {
 
     hasRedirected.current = true;
 
-    const isGerente = hasRole('gerente');
-    const isCorretor = hasRole('corretor');
-
-    if (isGerente) {
+    if (isManager) {
       navigate('/gerente', { replace: true });
     } else if (isCorretor) {
       navigate('/corretor', { replace: true });
     } else {
       navigate('/login', { replace: true });
     }
-  }, [loading, hasRole, navigate]);
+  }, [loading, isManager, isCorretor, navigate]);
 
   return <GlobalLoading message='Carregando dashboard...' />;
 };

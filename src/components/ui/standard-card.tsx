@@ -89,7 +89,7 @@ export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
           'h-full transition-all duration-300 ease-out',
           'border-2', // Borda mais espessa como na imagem
           onClick && 'hover:shadow-xl hover:scale-105',
-          className
+      className
         )}
         style={{ borderColor: `${cardColor}40` }} // Borda colorida sutil
       >
@@ -99,27 +99,27 @@ export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
             <div className="flex-1 space-y-3">
               {/* TÍTULO */}
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {title}
-              </p>
+            {title}
+          </p>
               
               {/* MÉTRICA PRINCIPAL */}
               {loading ? (
                 <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
               ) : (
                 <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {value}
+            {value}
                 </div>
               )}
               
               {/* DESCRIÇÃO */}
-              {subtitle && (
+          {subtitle && (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {subtitle}
-                </p>
-              )}
+              {subtitle}
+            </p>
+          )}
               
               {/* TREND INDICATOR */}
-              {trend && (
+          {trend && (
                 <div className="flex items-center gap-1">
                   <div className={cn(
                     'flex items-center gap-1 text-sm font-medium',
@@ -138,8 +138,8 @@ export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
                       {trend.period}
                     </span>
                   )}
-                </div>
-              )}
+            </div>
+          )}
               
               {/* PROGRESS BAR */}
               {progress !== undefined && (
@@ -152,7 +152,7 @@ export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
                   } as React.CSSProperties}
                 />
               )}
-            </div>
+        </div>
             
             {/* ÍCONE (DIREITA) */}
             <div 
@@ -163,8 +163,8 @@ export const StandardMetricCard: React.FC<StandardMetricCardProps> = ({
                 className: "h-8 w-8",
                 style: { color: cardColor }
               })}
-            </div>
           </div>
+        </div>
         </CardContent>
       </Card>
     </CardComponent>
@@ -332,10 +332,10 @@ export const StandardStatCard: React.FC<StandardStatCardProps> = ({
                 className: "h-6 w-6",
                 style: { color: cardColor }
               })}
-            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardContent>
+    </Card>
     </CardComponent>
   );
 };

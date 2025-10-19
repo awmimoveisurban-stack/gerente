@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
@@ -105,7 +105,7 @@ const COLUMNS = [
   },
 ];
 
-export default function KanbanEnhanced() {
+const KanbanEnhanced = React.memo(function KanbanEnhanced() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { leads, updateLead, loading, refetch } = useLeads();
@@ -275,6 +275,7 @@ export default function KanbanEnhanced() {
   }, [getColumnStats]);
 
   // Leads por coluna
+  // ✅ MEMOIZAÇÃO: Calcular leads por coluna apenas quando necessário
   const leadsByColumn = useMemo(() => {
     return COLUMNS.reduce(
       (acc, column) => {
@@ -287,7 +288,7 @@ export default function KanbanEnhanced() {
     );
   }, [filteredLeads]);
 
-  // Buscar nome do corretor
+  // ✅ MEMOIZAÇÃO: Buscar nome do corretor apenas quando necessário
   const getCorretorName = useCallback(
     (corretorId?: string) => {
       if (!corretorId) return undefined;
@@ -424,10 +425,10 @@ export default function KanbanEnhanced() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            {/* ✅ GRID RESPONSIVO MELHORADO */}
-            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 lg:gap-6 md:[overflow:visible] [overflow-x:auto] [scroll-snap-type:x_mandatory] [-ms-overflow-style:none] [scrollbar-width:none]'>
+            {/* ✅ GRID RESPONSIVO OTIMIZADO PARA MOBILE/TABLET */}
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4 lg:gap-6 overflow-x-auto scrollbar-hide'>
               {COLUMNS.map((column, index) => (
-                <div key={column.id} className="snap-start">
+                <div key={column.id} className="min-w-[280px] md:min-w-0">
                   <KanbanColumn
                     id={column.id}
                     title={column.title}
@@ -520,4 +521,6 @@ export default function KanbanEnhanced() {
       </div>
     </StandardPageLayout>
   );
-}
+});
+
+export default KanbanEnhanced;

@@ -22,3 +22,4 @@ COMMENT ON TABLE public.whatsapp_config IS 'Configurações WhatsApp - Apenas Ev
 
 
 
+

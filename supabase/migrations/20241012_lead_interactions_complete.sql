@@ -576,3 +576,4 @@ GRANT EXECUTE ON FUNCTION public.detectar_leads_abandonados TO authenticated;
 
 
 
+

@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useLeadsSimple, type Lead } from '@/hooks/use-leads-simple';
+import { useLeads, type Lead } from '@/hooks/use-leads';
 import { StatusBadge } from '@/components/crm/status-badge';
 import { Loader2, Save, X } from 'lucide-react';
 
@@ -44,7 +44,7 @@ export function EditLeadModal({ lead, isOpen, onClose, onSuccess }: EditLeadModa
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { updateLead } = useLeadsSimple();
+  const { updateLead } = useLeads();
 
   // Preencher formulário quando lead mudar
   useEffect(() => {

@@ -37,21 +37,20 @@ import { CallLeadModal } from '@/components/crm/call-lead-modal';
 import { EmailLeadModal } from '@/components/crm/email-lead-modal';
 import { ScheduleVisitModal } from '@/components/crm/schedule-visit-modal';
 import { AddLeadModal } from '@/components/crm/add-lead-modal';
-import { useLeads, type Lead } from '@/hooks/use-leads-v2';
+import { useLeads, type Lead } from '@/hooks/use-leads';
 import { useLeadsFilters } from '@/hooks/use-leads-filters';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedAuth } from '@/contexts/unified-auth-context';
-// ✅ IMPORTAÇÕES PADRONIZADAS BASEADAS NAS IMAGENS
+// ✅ IMPORTAÇÕES DO SISTEMA DE DESIGN UNIFICADO
 import {
-  StandardPageLayout,
+  StandardPage,
   StandardHeader,
-  StandardDashboardCard,
-  StandardDashboardGrid,
-  StandardDashboardContainer,
-  DASHBOARD_COLORS,
-  DASHBOARD_ANIMATIONS,
-  useDashboardAnimations,
-} from '@/components/layout/standard-layout';
+  StandardCard,
+  MetricCard,
+  StandardButton,
+  ResponsiveGrid,
+} from '@/components/ui/standard-components';
+import { DESIGN_SYSTEM } from '@/design-system';
 import {
   Plus,
   TrendingUp,
@@ -220,28 +219,27 @@ export default function LeadsV3() {
 
   if (loading) {
     return (
-      <StandardPageLayout>
+      <StandardPage>
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-2">
             <RefreshCw className="h-6 w-6 animate-spin" />
             <span>Carregando seus leads...</span>
           </div>
         </div>
-      </StandardPageLayout>
+      </StandardPage>
     );
   }
 
   return (
     <CorretorRoute>
-      <StandardPageLayout
+      <StandardPage
         header={
           <StandardHeader
             title="Meus Leads"
             description="🎯 Gestão pessoal dos seus leads e oportunidades"
-            icon={<Target className="h-6 w-6 text-white" />}
+            icon={Target}
             badges={headerBadges}
             actions={headerActions}
-            gradient="bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800"
           />
         }
       >
@@ -513,7 +511,7 @@ export default function LeadsV3() {
             />
           </>
         )}
-      </StandardPageLayout>
+      </StandardPage>
     </CorretorRoute>
   );
 }

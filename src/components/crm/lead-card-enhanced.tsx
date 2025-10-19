@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useState, useEffect } from 'react';
 
 interface LeadCardEnhancedProps {
   lead: Lead;
@@ -35,7 +35,7 @@ interface LeadCardEnhancedProps {
   cardSize?: 'default' | 'compact' | 'mini';
 }
 
-export function LeadCardEnhanced({
+const LeadCardEnhanced = React.memo(function LeadCardEnhanced({
   lead,
   onViewDetails,
   onCall,
@@ -89,16 +89,35 @@ export function LeadCardEnhanced({
     }
   };
 
-  const timeInStage = getTimeInStage();
-
-  // ✅ FASE 2.2: Extrair Score IA
-  const getAIScore = (): number | null => {
+  // ✅ MEMOIZAÇÃO: Calcular valores apenas quando necessário
+  const timeInStage = useMemo(() => getTimeInStage(), [lead.status, lead.updated_at]);
+  
+  const aiScore = useMemo(() => {
     if (!lead.observacoes) return null;
     const scoreMatch = lead.observacoes.match(/Score:\s*(\d+)\/100/i);
     return scoreMatch ? parseInt(scoreMatch[1]) : null;
-  };
+  }, [lead.observacoes]);
 
-  const aiScore = getAIScore();
+  // ✅ MEMOIZAÇÃO: Handlers para evitar re-renderizações
+  const handleViewDetails = useCallback(() => {
+    onViewDetails(lead);
+  }, [onViewDetails, lead]);
+
+  const handleCall = useCallback(() => {
+    onCall(lead);
+  }, [onCall, lead]);
+
+  const handleEmail = useCallback(() => {
+    onEmail(lead);
+  }, [onEmail, lead]);
+
+  const handleScheduleVisit = useCallback(() => {
+    onScheduleVisit(lead);
+  }, [onScheduleVisit, lead]);
+
+  const handleReassign = useCallback(() => {
+    onReassign?.(lead);
+  }, [onReassign, lead]);
 
   // ✅ Score visual color
   const getScoreColor = (score: number) => {
@@ -216,7 +235,7 @@ export function LeadCardEnhanced({
               <DropdownMenuItem
                 onClick={e => {
                   e.stopPropagation();
-                  onViewDetails(lead);
+                  handleViewDetails();
                 }}
               >
                 <Eye className='mr-2 h-4 w-4' />
@@ -225,7 +244,7 @@ export function LeadCardEnhanced({
               <DropdownMenuItem
                 onClick={e => {
                   e.stopPropagation();
-                  onCall(lead);
+                  handleCall();
                 }}
               >
                 <Phone className='mr-2 h-4 w-4' />
@@ -234,7 +253,7 @@ export function LeadCardEnhanced({
               <DropdownMenuItem
                 onClick={e => {
                   e.stopPropagation();
-                  onEmail(lead);
+                  handleEmail();
                 }}
               >
                 <Mail className='mr-2 h-4 w-4' />
@@ -243,7 +262,7 @@ export function LeadCardEnhanced({
               <DropdownMenuItem
                 onClick={e => {
                   e.stopPropagation();
-                  onScheduleVisit(lead);
+                  handleScheduleVisit();
                 }}
               >
                 <Calendar className='mr-2 h-4 w-4' />
@@ -253,7 +272,7 @@ export function LeadCardEnhanced({
                 <DropdownMenuItem
                   onClick={e => {
                     e.stopPropagation();
-                    onReassign(lead);
+                    handleReassign();
                   }}
                 >
                   <RefreshCw className='mr-2 h-4 w-4' />
@@ -345,4 +364,15 @@ export function LeadCardEnhanced({
       </CardContent>
     </Card>
   );
-}
+}, (prevProps, nextProps) => {
+  // ✅ COMPARAÇÃO CUSTOMIZADA PARA OTIMIZAÇÃO
+  return (
+    prevProps.lead.id === nextProps.lead.id &&
+    prevProps.lead.status === nextProps.lead.status &&
+    prevProps.lead.updated_at === nextProps.lead.updated_at &&
+    prevProps.cardSize === nextProps.cardSize &&
+    prevProps.corretorName === nextProps.corretorName
+  );
+});
+
+export { LeadCardEnhanced };

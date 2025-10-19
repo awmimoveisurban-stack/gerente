@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { type Lead } from "@/hooks/use-leads-stable";
+import { type Lead } from "@/hooks/use-leads";
 
 export interface KanbanMetrics {
   totalLeads: number;

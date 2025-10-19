@@ -13,8 +13,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, useRoutes } from 'react-router-dom';
-import { UnifiedAuthProvider } from '@/contexts/unified-auth-context';
-import { SearchProvider } from '@/contexts/search-context';
+import { AuthProvider } from '@/features/auth/auth-context';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { GlobalLoading } from '@/components/global-loading';
 import { routes } from '@/config/route-config';
@@ -61,20 +60,18 @@ const App = () => (
           v7_relativeSplatPath: true,
         }}
       >
-        <UnifiedAuthProvider>
+        <AuthProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <SearchProvider>
-              {/* Console Helper para desenvolvimento */}
-              <ConsoleHelper />
-              {/* Suspense para lazy loading */}
-              <Suspense fallback={<GlobalLoading message='Carregando...' />}>
-                <AppRoutes />
-              </Suspense>
-            </SearchProvider>
+            {/* Console Helper para desenvolvimento */}
+            <ConsoleHelper />
+            {/* Suspense para lazy loading */}
+            <Suspense fallback={<GlobalLoading message='Carregando...' />}>
+              <AppRoutes />
+            </Suspense>
           </TooltipProvider>
-        </UnifiedAuthProvider>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </ErrorBoundary>

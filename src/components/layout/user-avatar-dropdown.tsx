@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUnifiedAuth } from '@/contexts/unified-auth-context';
+import { useAuth } from '@/features/auth/auth-context';
 import { useNavigate } from 'react-router-dom';
 
 interface UserAvatarDropdownProps {
@@ -21,7 +21,7 @@ export function UserAvatarDropdown({
   userEmail = '',
   userType = 'corretor',
 }: UserAvatarDropdownProps) {
-  const { logout: signOut } = useUnifiedAuth();
+  const { logout: signOut } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 

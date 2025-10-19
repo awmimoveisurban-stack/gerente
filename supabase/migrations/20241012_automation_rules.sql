@@ -487,3 +487,4 @@ GRANT EXECUTE ON FUNCTION public.executar_todas_automacoes TO authenticated;
 
 
 
+

@@ -32,7 +32,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useUnifiedAuth } from '@/contexts/unified-auth-context';
+import { useAuth } from '@/features/auth/auth-context';
 
 const corretorItems = [
   { title: 'Dashboard', url: '/corretor', icon: BarChart3 },
@@ -63,7 +63,7 @@ export function AppSidebar({
   userType = 'corretor',
   userEmail = '',
 }: AppSidebarProps) {
-  const { logout: signOut } = useUnifiedAuth();
+  const { logout: signOut } = useAuth();
   const { state, toggleSidebar } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;

@@ -1,15 +1,9 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './app-sidebar';
-import { NotificationsFixed } from '@/components/notifications/notifications-fixed';
-import { SafeNotificationIntegration } from '@/components/notifications/safe-integration';
 import { UserAvatarDropdown } from './user-avatar-dropdown';
-import { CacheClearButton } from '@/components/debug/cache-clear-button';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useUnifiedAuth } from '@/contexts/unified-auth-context';
-import { useUnifiedRoles } from '@/hooks/use-unified-roles';
-import { useSearch } from '@/contexts/search-context';
-import { useUserSync } from '@/hooks/use-user-sync';
+import { useAuth } from '@/features/auth/auth-context';
 import { useState } from 'react';
 
 interface AppLayoutProps {
@@ -17,27 +11,10 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { user, logout: signOut } = useUnifiedAuth();
-  const { isManager: isGerente, roles } = useUnifiedRoles();
+  const { user, logout: signOut, isManager } = useAuth();
   
-  // 🔄 Hook para sincronização de usuário
-  useUserSync();
-
-  // ✅ FIX: Tornar useSearch opcional (pode não estar em SearchProvider)
-  const [localSearchTerm, setLocalSearchTerm] = useState('');
-
-  let searchTerm = localSearchTerm;
-  let setSearchTerm = setLocalSearchTerm;
-  let performGlobalSearch = () => {};
-
-  try {
-    const searchContext = useSearch();
-    searchTerm = searchContext.searchTerm;
-    setSearchTerm = searchContext.setSearchTerm;
-    performGlobalSearch = searchContext.performGlobalSearch;
-  } catch (error) {
-    // SearchProvider não disponível, usar state local
-  }
+  // ✅ Estado local para busca
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleSignOut = async () => {
     console.log('🔘 Botão SAIR clicado (header)');
@@ -50,20 +27,20 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      performGlobalSearch();
+      console.log('🔍 Busca realizada:', searchTerm);
     }
   };
 
   // ✅ FIX: Debug da detecção de roles
   console.log('🔍 [APP-LAYOUT] Verificando roles:', {
-    isGerente,
+    isManager,
     userEmail: user?.email,
-    roles: roles,
+    userRole: user?.role,
   });
 
   // ✅ FIX: Verificação mais robusta para evitar gerentes sendo detectados como corretores
   const determineUserType = () => {
-    if (isGerente) {
+    if (isManager) {
       console.log('✅ [APP-LAYOUT] Usuário confirmado como GERENTE');
       return 'gerente';
     }

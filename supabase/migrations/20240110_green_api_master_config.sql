@@ -46,3 +46,4 @@ COMMENT ON COLUMN whatsapp_config.provider IS 'Provedor: evolution-api, twilio, 
 
 
 
+

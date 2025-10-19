@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, User, Mail, Phone, Home, FileText, Loader2 } from 'lucide-react';
-import { useLeadsSimple } from '@/hooks/use-leads-simple';
+import { useLeads } from '@/hooks/use-leads';
 import {
   validateName,
   validateEmail,
@@ -48,7 +48,7 @@ interface LeadData {
 
 export function AddLeadModal({ open, onOpenChange }: AddLeadModalProps) {
   const { toast } = useToast();
-  const { createLead } = useLeadsSimple();
+  const { createLead } = useLeads();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [leadData, setLeadData] = useState<LeadData>({
     nome: '',
